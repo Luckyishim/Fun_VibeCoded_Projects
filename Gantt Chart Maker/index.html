@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart Maker (June 1st Week - Sept 1st Week)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; margin: 20px; color: #333; }
+        .app-container { display: flex; flex-direction: column; gap: 20px; max-width: 1500px; margin: 0 auto; }
+        
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; font-size: 18px; color: #111; }
+
+        .controls-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 15px; }
+        .control-group { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+        
+        button { background-color: #0d6efd; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #0b5ed7; }
+        button.btn-add { background-color: #198754; }
+        button.btn-add:hover { background-color: #157347; }
+        button.btn-danger { background-color: #dc3545; padding: 4px 8px; font-size: 12px; }
+
+        .table-wrapper { max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th, td { padding: 8px 12px; border-bottom: 1px solid #dee2e6; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; }
+        input.cell-input { width: 100%; border: 1px solid #ced4da; padding: 4px 6px; border-radius: 3px; font-size: 13px; }
+        input.num-input { width: 65px; }
+
+        .chart-preview-container { overflow-x: auto; background-color: #e9ecef; padding: 15px; border-radius: 6px; text-align: center; }
+        canvas { background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Top Settings -->
+    <div class="panel">
+        <h2>1. Spacing & Export Controls</h2>
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="rowSpacing">Vertical Row Spacing: </label>
+                <input type="range" id="rowSpacing" min="25" max="65" value="40" oninput="renderGantt()">
+                <span id="rowSpacingVal">40px</span>
+            </div>
+            <div class="control-group">
+                <label for="barHeight">Activity Bar Height: </label>
+                <input type="range" id="barHeight" min="10" max="32" value="18" oninput="renderGantt()">
+                <span id="barHeightVal">18px</span>
+            </div>
+            <button onclick="exportFullImage()">📸 Download Full High-Res Image (PNG)</button>
+        </div>
+
+        <!-- Editable Timeline Columns -->
+        <h2>2. Edit Timeline Headers (June W1 to Sept W1)</h2>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto;">
+            <div style="flex: 4;">
+                <label>Month 1:</label>
+                <input class="cell-input" id="m1" value="JUNE 2026" onchange="renderGantt()">
+            </div>
+            <div style="flex: 4;">
+                <label>Month 2:</label>
+                <input class="cell-input" id="m2" value="JULY 2026" onchange="renderGantt()">
+            </div>
+            <div style="flex: 4;">
+                <label>Month 3:</label>
+                <input class="cell-input" id="m3" value="AUGUST 2026" onchange="renderGantt()">
+            </div>
+            <div style="flex: 1;">
+                <label>Month 4:</label>
+                <input class="cell-input" id="m4" value="SEPT 2026" onchange="renderGantt()">
+            </div>
+        </div>
+
+        <!-- Editable Tasks Table -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h2 style="margin:0;">3. Edit Tasks (Timeline Range: 0 to 13 Weeks)</h2>
+            <button class="btn-add" onclick="addTask()">+ Add New Task</button>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Task Name</th>
+                        <th style="width: 100px;">Type</th>
+                        <th style="width: 100px;">Start Week</th>
+                        <th style="width: 100px;">End Week</th>
+                        <th style="width: 60px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Canvas Preview Panel -->
+    <div class="panel">
+        <h2>4. High-Clarity Live Output</h2>
+        <div class="chart-preview-container">
+            <canvas id="ganttCanvas"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Timeline Definition: June (4 weeks), July (4 weeks), August (4 weeks), September (1 week) = 13 Total Weeks
+const monthsConfig = [
+    { id: "m1", default: "JUNE 2026", weeks: 4 },
+    { id: "m2", default: "JULY 2026", weeks: 4 },
+    { id: "m3", default: "AUGUST 2026", weeks: 4 },
+    { id: "m4", default: "SEPT 2026", weeks: 1 }
+];
+
+// Tasks fitted within 0 to 13 weeks (June W1 to Sept W1)
+let ganttTasks = [
+    { id: "1.", name: "INITIAL RESEARCH & REQUIREMENTS", type: "stage", start: 0, end: 4 },
+    { id: "1.1", name: "Review Project Brief and Requirements", type: "activity", start: 0, end: 1 },
+    { id: "1.2", name: "Identify Data Centre Requirements", type: "activity", start: 1, end: 2 },
+    { id: "1.3", name: "Research Data Centre Components", type: "activity", start: 2, end: 3 },
+    { id: "1.4", name: "Collect Technical Sources", type: "activity", start: 3, end: 4 },
+    { id: "1.5", name: "Establish Initial Design Requirements", type: "activity", start: 3, end: 4 },
+
+    { id: "2.", name: "BUSINESS NEEDS & TIA-942 EVALUATION", type: "stage", start: 3.5, end: 7 },
+    { id: "2.1", name: "Analyse Business Needs", type: "activity", start: 3.5, end: 4.5 },
+    { id: "2.2", name: "Identify Performance and Reliability Requirements", type: "activity", start: 4.5, end: 5.5 },
+    { id: "2.3", name: "Research TIA-942 Standards", type: "activity", start: 5.5, end: 6.2 },
+    { id: "2.4", name: "Compare Data Centre Tiers", type: "activity", start: 6.2, end: 7 },
+
+    { id: "3.", name: "TECHNICAL GOALS & STRATEGY", type: "stage", start: 5, end: 9.5 },
+    { id: "3.1", name: "Define Technical Goals", type: "activity", start: 5, end: 6 },
+    { id: "3.2", name: "Develop Performance and Scalability Goals", type: "activity", start: 5, end: 7 },
+    { id: "3.3", name: "Develop Availability and Security Requirements", type: "activity", start: 7, end: 8 },
+    { id: "3.4", name: "Develop Strategy Guidelines", type: "activity", start: 8, end: 9.5 },
+
+    { id: "4.", name: "NETWORK ARCHITECTURE & TOPOLOGY", type: "stage", start: 5, end: 11 },
+    { id: "4.1", name: "Research Network Architecture", type: "activity", start: 5, end: 7 },
+    { id: "4.2", name: "Develop Proposed Network Architecture", type: "activity", start: 7, end: 8.5 },
+    { id: "4.3", name: "Design Network Topology", type: "activity", start: 8.5, end: 9.5 },
+    { id: "4.4", name: "Evaluate Network Topology", type: "activity", start: 9.5, end: 10.5 },
+    { id: "4.5", name: "Select Recommended Topology", type: "activity", start: 10.5, end: 11 },
+
+    { id: "5.", name: "DOCUMENTATION & FINALISATION", type: "stage", start: 10, end: 13 },
+    { id: "5.1", name: "Integrate Research into Report", type: "activity", start: 10, end: 11 },
+    { id: "5.2", name: "Verify References", type: "activity", start: 11, end: 11.8 },
+    { id: "5.3", name: "Review Technical Accuracy", type: "activity", start: 11.8, end: 12.3 },
+    { id: "5.4", name: "Final Formatting and Submission", type: "activity", start: 12.3, end: 13 }
+];
+
+function populateTable() {
+    const tbody = document.getElementById("taskTableBody");
+    tbody.innerHTML = "";
+    
+    ganttTasks.forEach((item, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><input class="cell-input num-input" value="${item.id}" onchange="updateTask(${index}, 'id', this.value)"></td>
+            <td><input class="cell-input" value="${item.name}" onchange="updateTask(${index}, 'name', this.value)"></td>
+            <td>
+                <select class="cell-input" onchange="updateTask(${index}, 'type', this.value)">
+                    <option value="stage" ${item.type==='stage'?'selected':''}>Stage</option>
+                    <option value="activity" ${item.type==='activity'?'selected':''}>Activity</option>
+                </select>
+            </td>
+            <td><input type="number" step="0.1" class="cell-input num-input" value="${item.start}" onchange="updateTask(${index}, 'start', parseFloat(this.value))"></td>
+            <td><input type="number" step="0.1" class="cell-input num-input" value="${item.end}" onchange="updateTask(${index}, 'end', parseFloat(this.value))"></td>
+            <td><button class="btn-danger" onclick="deleteTask(${index})">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateTask(index, prop, value) {
+    ganttTasks[index][prop] = value;
+    renderGantt();
+}
+
+function addTask() {
+    ganttTasks.push({ id: "5.5", name: "New Final Task", type: "activity", start: 12, end: 13 });
+    populateTable();
+    renderGantt();
+}
+
+function deleteTask(index) {
+    ganttTasks.splice(index, 1);
+    populateTable();
+    renderGantt();
+}
+
+function renderGantt() {
+    const canvas = document.getElementById("ganttCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const rowSpacing = parseInt(document.getElementById("rowSpacing").value);
+    const barH = parseInt(document.getElementById("barHeight").value);
+    
+    document.getElementById("rowSpacingVal").innerText = rowSpacing + "px";
+    document.getElementById("barHeightVal").innerText = barH + "px";
+
+    const dpr = window.devicePixelRatio || 2; 
+    const taskColWidth = 400;
+    const weekWidth = 55;
+    const totalWeeks = 13; // 4 + 4 + 4 + 1
+    const timelineWidth = totalWeeks * weekWidth; 
+    const margin = 30;
+
+    const totalWidth = taskColWidth + timelineWidth + (margin * 2);
+    const headerHeight = 70;
+    const titleHeight = 50;
+    const legendHeight = 50;
+    const totalHeight = titleHeight + headerHeight + (ganttTasks.length * rowSpacing) + legendHeight;
+
+    canvas.width = totalWidth * dpr;
+    canvas.height = totalHeight * dpr;
+    canvas.style.width = totalWidth + "px";
+    canvas.style.height = totalHeight + "px";
+
+    ctx.scale(dpr, dpr);
+
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+    // Colors
+    const colorHeaderBg = "#d8d8d8";
+    const colorGrid = "#c0c0c0";
+    const colorBlue = "#3b71ca";
+    const colorGrey = "#4f4f4f";
+
+    // 1. Title
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 20px Arial";
+    ctx.fillText("Data Centre Design – Main Data Centre Design", margin, 35);
+
+    const startX = margin;
+    const startY = titleHeight;
+
+    // 2. Headers
+    ctx.fillStyle = colorHeaderBg;
+    ctx.fillRect(startX, startY, taskColWidth, headerHeight);
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startX, startY, taskColWidth, headerHeight);
+
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Task Name", startX + (taskColWidth / 2), startY + (headerHeight / 2) + 5);
+
+    // Render Timeline Months and Weeks
+    let currentWeekOffset = 0;
+    monthsConfig.forEach((m) => {
+        const monthName = document.getElementById(m.id).value;
+        const monthX = startX + taskColWidth + (currentWeekOffset * weekWidth);
+        const mWidth = m.weeks * weekWidth;
+
+        // Month Box
+        ctx.fillStyle = colorHeaderBg;
+        ctx.fillRect(monthX, startY, mWidth, headerHeight / 2);
+        ctx.strokeRect(monthX, startY, mWidth, headerHeight / 2);
+
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 12px Arial";
+        ctx.fillText(monthName, monthX + (mWidth / 2), startY + 22);
+
+        // Week Boxes
+        for (let w = 0; w < m.weeks; w++) {
+            const weekX = monthX + (w * weekWidth);
+            ctx.fillStyle = colorHeaderBg;
+            ctx.fillRect(weekX, startY + (headerHeight / 2), weekWidth, headerHeight / 2);
+            ctx.strokeRect(weekX, startY + (headerHeight / 2), weekWidth, headerHeight / 2);
+
+            ctx.fillStyle = "#000";
+            ctx.font = "11px Arial";
+            ctx.fillText(`Week ${w + 1}`, weekX + (weekWidth / 2), startY + headerHeight - 10);
+        }
+
+        currentWeekOffset += m.weeks;
+    });
+
+    // 3. Rows
+    let currentY = startY + headerHeight;
+
+    ganttTasks.forEach((item) => {
+        ctx.strokeStyle = colorGrid;
+        ctx.strokeRect(startX, currentY, taskColWidth + timelineWidth, rowSpacing);
+
+        ctx.textAlign = "left";
+        if (item.type === 'stage') {
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText(`${item.id} ${item.name}`, startX + 10, currentY + (rowSpacing / 2) + 4);
+
+            // Grey Stage Bar
+            const barX1 = startX + taskColWidth + (item.start * weekWidth);
+            const barX2 = startX + taskColWidth + (item.end * weekWidth);
+            const midY = currentY + (rowSpacing / 2);
+
+            ctx.strokeStyle = colorGrey;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(barX1, midY);
+            ctx.lineTo(barX2, midY);
+            ctx.stroke();
+
+            // End Hooks
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(barX1, midY - 6); ctx.lineTo(barX1, midY + 6);
+            ctx.moveTo(barX2, midY - 6); ctx.lineTo(barX2, midY + 6);
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = "#222222";
+            ctx.font = "12px Arial";
+            ctx.fillText(`  ${item.id}   ${item.name}`, startX + 15, currentY + (rowSpacing / 2) + 4);
+
+            // Blue Activity Bar
+            const barX = startX + taskColWidth + (item.start * weekWidth);
+            const barW = (item.end - item.start) * weekWidth;
+            const barY = currentY + (rowSpacing - barH) / 2;
+
+            ctx.fillStyle = colorBlue;
+            ctx.fillRect(barX, barY, barW, barH);
+        }
+
+        currentY += rowSpacing;
+    });
+
+    // 4. Vertical Grid Lines
+    let wAcc = 0;
+    for (let w = 0; w <= totalWeeks; w++) {
+        const gridX = startX + taskColWidth + (w * weekWidth);
+        const isMonthBorder = (w === 0 || w === 4 || w === 8 || w === 12 || w === 13);
+        ctx.strokeStyle = isMonthBorder ? "#666666" : colorGrid;
+        ctx.lineWidth = isMonthBorder ? 1.2 : 0.5;
+
+        ctx.beginPath();
+        ctx.moveTo(gridX, startY + headerHeight);
+        ctx.lineTo(gridX, currentY);
+        ctx.stroke();
+    }
+
+    // Outer Border
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startX, startY, taskColWidth + timelineWidth, currentY - startY);
+
+    // 5. Legend
+    const legendY = currentY + 25;
+    ctx.font = "12px Arial";
+    ctx.textAlign = "left";
+
+    // Stage Legend
+    ctx.strokeStyle = colorGrey;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX + taskColWidth + 20, legendY);
+    ctx.lineTo(startX + taskColWidth + 50, legendY);
+    ctx.stroke();
+
+    ctx.fillStyle = "#000";
+    ctx.fillText("= Stage,", startX + taskColWidth + 58, legendY + 4);
+
+    // Activity Legend
+    ctx.fillStyle = colorBlue;
+    ctx.fillRect(startX + taskColWidth + 120, legendY - 6, 25, 12);
+    
+    ctx.fillStyle = "#000";
+    ctx.fillText("= Activity", startX + taskColWidth + 152, legendY + 4);
+}
+
+function exportFullImage() {
+    const canvas = document.getElementById("ganttCanvas");
+    const imageURI = canvas.toDataURL("image/png");
+    
+    const link = document.createElement("a");
+    link.download = "June_to_Sept_Gantt_Chart.png";
+    link.href = imageURI;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+window.onload = () => {
+    populateTable();
+    renderGantt();
+};
+</script>
+
+</body>
+</html>

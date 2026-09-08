@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3D Glowing Lotus - Three.js</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+
+<script>
+    // =========================================================
+    // 1. SCENE
+    // =========================================================
+
+    const scene = new THREE.Scene();
+
+    scene.background = new THREE.Color(0x020005);
+
+
+    // =========================================================
+    // 2. CAMERA
+    // =========================================================
+
+    const camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+    );
+
+    camera.position.set(0, 3.5, 8);
+    camera.lookAt(0, 1.2, 0);
+
+
+    // =========================================================
+    // 3. RENDERER
+    // =========================================================
+
+    const renderer = new THREE.WebGLRenderer({
+        antialias: true
+    });
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+    );
+
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    document.body.appendChild(renderer.domElement);
+
+
+    // =========================================================
+    // 4. LIGHTING
+    // =========================================================
+
+    const ambientLight = new THREE.AmbientLight(
+        0xffc4e1,
+        0.5
+    );
+
+    scene.add(ambientLight);
+
+
+    const pinkLight = new THREE.PointLight(
+        0xff1493,
+        4,
+        15
+    );
+
+    pinkLight.position.set(0, 1.5, 0);
+
+    scene.add(pinkLight);
+
+
+    const whiteLight = new THREE.PointLight(
+        0xffffff,
+        2,
+        10
+    );
+
+    whiteLight.position.set(0, 4, 2);
+
+    scene.add(whiteLight);
+
+
+    // =========================================================
+    // 5. PETAL MATERIAL
+    // =========================================================
+
+    const petalMaterial = new THREE.MeshPhysicalMaterial({
+
+        color: 0xff78b7,
+
+        emissive: 0xff1493,
+
+        emissiveIntensity: 0.25,
+
+        roughness: 0.18,
+
+        metalness: 0.05,
+
+        clearcoat: 1,
+
+        clearcoatRoughness: 0.15,
+
+        transparent: true,
+
+        opacity: 0.9,
+
+        side: THREE.DoubleSide
+    });
+
+
+    // =========================================================
+    // 6. CREATE A SINGLE LOTUS PETAL
+    // =========================================================
+
+    function createPetal(
+        width,
+        height,
+        curve
+    ) {
+
+        const geometry = new THREE.BufferGeometry();
+
+        const segments = 16;
+
+        const vertices = [];
+        const indices = [];
+
+        /*
+            Create the petal as a curved surface.
+
+            The bottom starts narrow.
+            The middle becomes wider.
+            The top becomes pointed.
+        */
+
+        for (let i = 0; i <= segments; i++) {
+
+            const t = i / segments;
+
+            const y = t * height;
+
+            // Width is smallest at the bottom
+            // and widest around the middle.
+            const widthFactor =
+                Math.sin(t * Math.PI) *
+                (0.45 + 0.55 * t);
+
+            const currentWidth =
+                width * widthFactor;
+
+            // Curve the petal backward.
+            const z =
+                curve *
+                Math.sin(t * Math.PI * 0.9);
+
+            // Left vertex
+            vertices.push(
+                -currentWidth,
+                y,
+                z
+            );
+
+            // Right vertex
+            vertices.push(
+                currentWidth,
+                y,
+                z
+            );
+        }
+
+
+        // Connect the vertices
+        for (let i = 0; i < segments; i++) {
+
+            const a = i * 2;
+            const b = i * 2 + 1;
+            const c = i * 2 + 2;
+            const d = i * 2 + 3;
+
+            indices.push(
+                a, b, c,
+                b, d, c
+            );
+        }
+
+
+        geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(
+                vertices,
+                3
+            )
+        );
+
+        geometry.setIndex(indices);
+
+        geometry.computeVertexNormals();
+
+        return geometry;
+    }
+
+
+    // =========================================================
+    // 7. FLOWER GROUP
+    // =========================================================
+
+    const flower = new THREE.Group();
+
+    scene.add(flower);
+
+
+    // =========================================================
+    // 8. CREATE PETAL LAYERS
+    // =========================================================
+
+    const petals = [];
+
+
+    function createPetalLayer(
+        count,
+        radius,
+        height,
+        width,
+        curve,
+        tilt
+    ) {
+
+        for (let i = 0; i < count; i++) {
+
+            const geometry = createPetal(
+                width,
+                height,
+                curve
+            );
+
+            const petal = new THREE.Mesh(
+                geometry,
+                petalMaterial
+            );
+
+
+            // Create a pivot for opening animation
+            const pivot = new THREE.Group();
+
+            flower.add(pivot);
+
+            pivot.add(petal);
+
+
+            // Position petal around the center
+            const angle =
+                (i / count) *
+                Math.PI *
+                2;
+
+
+            pivot.rotation.y = angle;
+
+
+            // Move petal slightly away from center
+            petal.position.y = 0.15;
+
+            petal.position.z = radius;
+
+
+            // Tilt the petal outward
+            petal.rotation.x = tilt;
+
+
+            // Start slightly closed
+            petal.rotation.z = 0;
+
+
+            petals.push({
+                petal: petal,
+                pivot: pivot,
+                target: tilt
+            });
+        }
+    }
+
+
+    // =========================================================
+    // 9. OUTER PETALS
+    // =========================================================
+
+    createPetalLayer(
+        12,
+        0.15,
+        2.8,
+        0.75,
+        -0.45,
+        -0.55
+    );
+
+
+    // =========================================================
+    // 10. MIDDLE PETALS
+    // =========================================================
+
+    createPetalLayer(
+        10,
+        0.08,
+        2.45,
+        0.68,
+        -0.35,
+        -0.35
+    );
+
+
+    // =========================================================
+    // 11. INNER PETALS
+    // =========================================================
+
+    createPetalLayer(
+        8,
+        0,
+        2.0,
+        0.58,
+        -0.25,
+        -0.15
+    );
+
+
+    // =========================================================
+    // 12. FLOWER CENTER
+    // =========================================================
+
+    const coreGeometry =
+        new THREE.SphereGeometry(
+            0.32,
+            32,
+            32
+        );
+
+
+    const coreMaterial =
+        new THREE.MeshBasicMaterial({
+            color: 0xffffff
+        });
+
+
+    const core = new THREE.Mesh(
+        coreGeometry,
+        coreMaterial
+    );
+
+
+    core.position.y = 0.65;
+
+    flower.add(core);
+
+
+    // =========================================================
+    // 13. GLOW AROUND CENTER
+    // =========================================================
+
+    const glowGeometry =
+        new THREE.SphereGeometry(
+            0.65,
+            32,
+            32
+        );
+
+
+    const glowMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color: 0xff1493,
+
+            transparent: true,
+
+            opacity: 0.15,
+
+            blending:
+                THREE.AdditiveBlending,
+
+            depthWrite: false
+        });
+
+
+    const glow = new THREE.Mesh(
+        glowGeometry,
+        glowMaterial
+    );
+
+
+    glow.position.y = 0.65;
+
+    flower.add(glow);
+
+
+    // =========================================================
+    // 14. LOTUS BASE
+    // =========================================================
+
+    const baseGeometry =
+        new THREE.CylinderGeometry(
+            0.7,
+            0.9,
+            0.25,
+            32
+        );
+
+
+    const baseMaterial =
+        new THREE.MeshStandardMaterial({
+            color: 0x7d174f,
+            roughness: 0.35
+        });
+
+
+    const base = new THREE.Mesh(
+        baseGeometry,
+        baseMaterial
+    );
+
+
+    base.position.y = 0;
+
+    flower.add(base);
+
+
+    // =========================================================
+    // 15. FLOWER POSITION
+    // =========================================================
+
+    flower.position.y = -1;
+
+
+    // =========================================================
+    // 16. ANIMATION
+    // =========================================================
+
+    let opening = 0;
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+
+
+        // -----------------------------------------------------
+        // Slowly rotate the entire flower
+        // -----------------------------------------------------
+
+        flower.rotation.y += 0.002;
+
+
+        // -----------------------------------------------------
+        // Open the petals
+        // -----------------------------------------------------
+
+        if (opening < 1) {
+
+            opening += 0.008;
+
+            petals.forEach((item) => {
+
+                item.petal.rotation.x =
+                    item.target * opening;
+
+            });
+        }
+
+
+        // -----------------------------------------------------
+        // Pulse the center glow
+        // -----------------------------------------------------
+
+        const pulse =
+            1 +
+            Math.sin(
+                Date.now() * 0.003
+            ) * 0.12;
+
+
+        glow.scale.set(
+            pulse,
+            pulse,
+            pulse
+        );
+
+
+        // -----------------------------------------------------
+        // Render
+        // -----------------------------------------------------
+
+        renderer.render(
+            scene,
+            camera
+        );
+    }
+
+
+    animate();
+
+
+    // =========================================================
+    // 17. RESPONSIVE RESIZE
+    // =========================================================
+
+    window.addEventListener(
+        "resize",
+        () => {
+
+            camera.aspect =
+                window.innerWidth /
+                window.innerHeight;
+
+            camera.updateProjectionMatrix();
+
+
+            renderer.setSize(
+                window.innerWidth,
+                window.innerHeight
+            );
+
+
+            renderer.setPixelRatio(
+                Math.min(
+                    window.devicePixelRatio,
+                    2
+                )
+            );
+        }
+    );
+
+</script>
+
+</body>
+
+</html>
