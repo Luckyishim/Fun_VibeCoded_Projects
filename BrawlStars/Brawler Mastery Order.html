@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mastery Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F4F2FB; --surface:#FFFFFF; --ink:#1E1838; --muted:#6F6890; --line:#E2DEF2;
+  --accent:#FFC21A; --accent-ink:#2A1F00; --violet:#5B3DF5;
+  --display:'Lilita One','Arial Rounded MT Bold',system-ui,sans-serif;
+  --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15112B; --surface:#1F1A3D; --ink:#F1EEFF; --muted:#9A92C4; --line:#312A5C; --violet:#8F78FF;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15112B; --surface:#1F1A3D; --ink:#F1EEFF; --muted:#9A92C4; --line:#312A5C; --violet:#8F78FF;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:28px 18px 80px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--violet);outline-offset:2px;border-radius:8px}
+
+.hero{display:flex;align-items:baseline;gap:10px;margin:8px 0 4px}
+.hero .n{font-family:var(--display);font-size:clamp(64px,18vw,96px);line-height:1;letter-spacing:.5px}
+.hero .of{font-family:var(--display);font-size:clamp(28px,8vw,40px);color:var(--muted)}
+.sub{margin:0 0 18px;color:var(--muted)}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:26px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .5s ease}
+
+.tabs{display:flex;gap:6px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:16px}
+.tabs button{flex:1;border:0;background:transparent;padding:9px 0;border-radius:9px;font-weight:700;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+
+.search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;margin-bottom:14px}
+
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.tl .rank{font-family:var(--display);font-size:24px;color:var(--violet);text-align:right}
+.tl li:first-child .rank{color:var(--accent);-webkit-text-stroke:1px var(--accent-ink);}
+.tl .name{font-weight:700}
+.tl .gap{color:var(--muted);font-size:13px}
+.tl .date{color:var(--muted);font-size:14px;text-align:right;white-space:nowrap}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 8px;text-align:center;font-weight:500;font-size:14px;min-height:56px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.chip small{color:var(--muted);font-weight:400;font-size:11px}
+.chip.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.chip.done small{color:var(--accent-ink);opacity:.75}
+
+.empty{color:var(--muted);padding:28px 0;text-align:center}
+.foot{margin-top:34px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.foot input{flex:1;min-width:140px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+.btn{border:1px solid var(--line);background:var(--surface);padding:10px 14px;border-radius:10px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:#D23B3B}
+.note{color:var(--muted);font-size:13px;margin:12px 0 0}
+
+dialog{border:0;border-radius:18px;padding:22px;width:min(92vw,360px);background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(20,10,60,.35)}
+dialog::backdrop{background:rgba(15,10,40,.55)}
+dialog h2{font-family:var(--display);font-weight:400;font-size:30px;margin:0 0 4px}
+dialog p{margin:0 0 14px;color:var(--muted);font-size:14px}
+dialog input[type=date]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin-bottom:16px}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero"><span class="n" id="count">0</span><span class="of">/ 107</span></div>
+  <p class="sub" id="sub">Brawlers mastered, in the order you did it.</p>
+  <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-tl" aria-selected="true">Order</button>
+    <button role="tab" id="tab-all" aria-selected="false">All brawlers</button>
+  </div>
+
+  <input class="search" id="q" type="search" placeholder="Search brawlers" aria-label="Search brawlers" hidden>
+  <ol class="tl" id="timeline"></ol>
+  <div class="grid" id="grid" hidden></div>
+  <p class="empty" id="empty" hidden></p>
+
+  <div class="foot">
+    <input id="add" placeholder="Add a missing brawler" aria-label="Add a missing brawler">
+    <button class="btn" id="addBtn">Add</button>
+    <button class="btn" id="exportBtn">Export</button>
+    <button class="btn" id="importBtn">Import</button>
+    <input type="file" id="file" accept="application/json" hidden>
+  </div>
+  <p class="note" id="note"></p>
+</main>
+
+<dialog id="dlg">
+  <h2 id="dName">Brawler</h2>
+  <p id="dHint">When did you master them?</p>
+  <input type="date" id="dDate" aria-label="Mastery date">
+  <div class="row">
+    <button class="btn danger" id="dRemove" hidden>Unmark</button>
+    <button class="btn" id="dCancel">Cancel</button>
+    <button class="btn primary" id="dSave">Save</button>
+  </div>
+</dialog>
+
+<script>
+const BASE = ["Shelly","Nita","Colt","Bull","Brock","El Primo","Barley","Poco","Rosa","Jessie","Dynamike","Tick","8-Bit","Rico","Darryl","Penny","Carl","Jacky","Gus","Bo","Emz","Stu","Piper","Pam","Frank","Bibi","Bea","Nani","Edgar","Griff","Grom","Bonnie","Gale","Colette","Belle","Ash","Lola","Sam","Mandy","Maisie","Hank","Pearl","Larry & Lawrie","Angelo","Berry","Shade","Meeple","Mortis","Tara","Gene","Max","Mr. P","Sprout","Byron","Squeak","Lou","Ruffs","Buzz","Fang","Eve","Janet","Otis","Buster","Gray","R-T","Willow","Doug","Chuck","Charlie","Mico","Melodie","Lily","Clancy","Moe","Kenji","Juju","Spike","Crow","Leon","Sandy","Amber","Meg","Surge","Chester","Cordelius","Kit","Draco","Kaze","Alli","Trunk","Najia","Ollie","Lumi","Finx","Jae-yong","Pierce","Gigi","Glowbert","Sirius","Starr Nova","Damian","Cosmo","Bolt","Wendy","Ziggy"];
+const GOAL = 107, KEY = "brawler-mastery-v1";
+let state = { mastered:{}, extra:[], seq:0 };
+try { const s = localStorage.getItem(KEY); if (s) state = Object.assign(state, JSON.parse(s)); } catch(e){}
+
+const $ = id => document.getElementById(id);
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} };
+const roster = () => [...BASE, ...state.extra.filter(n => !BASE.includes(n))].sort((a,b)=>a.localeCompare(b));
+const fmt = d => new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+const today = () => { const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const days = (a,b) => Math.round((new Date(b)-new Date(a))/864e5);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let tab = "tl", current = null;
+
+function ordered(){
+  return Object.entries(state.mastered)
+    .map(([name,v])=>({name,...v}))
+    .sort((a,b)=> a.date.localeCompare(b.date) || a.seq-b.seq);
+}
+
+function render(){
+  const list = ordered(), n = list.length, total = roster().length;
+  $("count").textContent = n;
+  $("fill").style.width = Math.min(100, n/GOAL*100) + "%";
+  $("sub").textContent = n
+    ? `First: ${list[0].name} on ${fmt(list[0].date)}. Latest: ${list[n-1].name}.`
+    : "Brawlers mastered, in the order you did it.";
+  $("note").textContent = total < GOAL
+    ? `The list has ${total} brawlers, ${GOAL-total} short of ${GOAL}. Add any that are missing.` : "";
+
+  const q = $("q").value.trim().toLowerCase();
+  $("q").hidden = tab !== "all";
+  $("timeline").hidden = tab !== "tl";
+  $("grid").hidden = tab !== "all";
+  $("tab-tl").setAttribute("aria-selected", tab==="tl");
+  $("tab-all").setAttribute("aria-selected", tab==="all");
+  $("empty").hidden = true;
+
+  if (tab === "tl"){
+    $("timeline").innerHTML = list.map((b,i)=>{
+      const g = i ? days(list[i-1].date,b.date) : null;
+      const gap = i===0 ? "First one" : g===0 ? "Same day as previous" : `${g} day${g>1?"s":""} after previous`;
+      return `<li data-n="${esc(b.name)}" tabindex="0"><span class="rank">${i+1}</span>
+        <span><span class="name">${esc(b.name)}</span><br><span class="gap">${gap}</span></span>
+        <span class="date">${fmt(b.date)}</span></li>`;
+    }).join("");
+    if (!n){ $("empty").hidden=false; $("empty").textContent="Nothing yet. Open All brawlers and tap one you've mastered."; }
+  } else {
+    const r = roster().filter(x => x.toLowerCase().includes(q));
+    $("grid").innerHTML = r.map(x=>{
+      const m = state.mastered[x];
+      return `<button class="chip${m?" done":""}" data-n="${esc(x)}">${esc(x)}${m?`<small>${fmt(m.date)}</small>`:""}</button>`;
+    }).join("");
+    if (!r.length){ $("empty").hidden=false; $("empty").textContent="No match. Add it below if it's missing."; }
+  }
+}
+
+function openDlg(name){
+  current = name;
+  const m = state.mastered[name];
+  $("dName").textContent = name;
+  $("dHint").textContent = m ? "Change the date or unmark." : "When did you master them?";
+  $("dDate").value = m ? m.date : today();
+  $("dDate").max = today();
+  $("dRemove").hidden = !m;
+  $("dlg").showModal();
+}
+
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-n]");
+  if (t) openDlg(t.dataset.n);
+});
+$("timeline").addEventListener("keydown", e=>{
+  if (e.key==="Enter"){ const t=e.target.closest("[data-n]"); if(t) openDlg(t.dataset.n); }
+});
+$("dSave").onclick = ()=>{
+  const d = $("dDate").value; if (!d) return;
+  const prev = state.mastered[current];
+  state.mastered[current] = { date:d, seq: prev ? prev.seq : ++state.seq };
+  save(); $("dlg").close(); render();
+};
+$("dRemove").onclick = ()=>{ delete state.mastered[current]; save(); $("dlg").close(); render(); };
+$("dCancel").onclick = ()=> $("dlg").close();
+
+$("tab-tl").onclick = ()=>{ tab="tl"; render(); };
+$("tab-all").onclick = ()=>{ tab="all"; render(); };
+$("q").oninput = render;
+
+$("addBtn").onclick = ()=>{
+  const v = $("add").value.trim(); if (!v) return;
+  if (!roster().some(x=>x.toLowerCase()===v.toLowerCase())){ state.extra.push(v); save(); }
+  $("add").value=""; tab="all"; $("q").value=v; render();
+};
+$("add").addEventListener("keydown", e=>{ if(e.key==="Enter") $("addBtn").click(); });
+
+$("exportBtn").onclick = ()=>{
+  const out = ordered().map((b,i)=>`${i+1}. ${b.name} - ${b.date}`).join("\n");
+  const blob = JSON.stringify(state);
+  const w = prompt("Copy this backup to save it. Use Import to restore.", blob);
+};
+$("importBtn").onclick = ()=>{
+  const v = prompt("Paste a backup to restore:");
+  if (!v) return;
+  try { const s = JSON.parse(v); if (s && s.mastered){ state = Object.assign({mastered:{},extra:[],seq:0}, s); save(); render(); } }
+  catch(e){ alert("That backup isn't valid."); }
+};
+
+render();
+</script>
+</body>
+</html>
