@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky's Daily Routine</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0c0c0f;
+            --surface: #13131a;
+            --surface2: #1a1a24;
+            --border: rgba(255, 255, 255, 0.07);
+            --border2: rgba(255, 255, 255, 0.12);
+            --text: #f0eff8;
+            --muted: rgba(240, 239, 248, 0.45);
+            --faint: rgba(240, 239, 248, 0.18);
+            --accent: #a78bfa;
+            --accent2: #7c3aed;
+            --green: #34d399;
+            --amber: #fbbf24;
+            --red: #f87171;
+            --pink: #f472b6;
+            --blue: #60a5fa;
+            --teal: #2dd4bf;
+        }
+
+        body {
+            font-family: 'DM Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* BG grid texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(167, 139, 250, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(167, 139, 250, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+            top: -150px;
+            right: -100px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-blob2 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(52, 211, 153, 0.06) 0%, transparent 70%);
+            bottom: -100px;
+            left: -80px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 36px;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .title-block {}
+
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h1 span {
+            color: var(--accent);
+        }
+
+        .date-chip {
+            font-size: 11px;
+            color: var(--muted);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            white-space: nowrap;
+            margin-top: 6px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 28px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 5px;
+            animation: fadeUp 0.5s 0.1s ease both;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .tab.active {
+            background: var(--accent2);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.35);
+        }
+
+        .tab:not(.active):hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        /* Add block button */
+        .add-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px dashed var(--border2);
+            border-radius: 10px;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            padding: 11px 18px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(167, 139, 250, 0.05);
+        }
+
+        .add-btn svg {
+            flex-shrink: 0;
+        }
+
+        /* Section label */
+        .section-label {
+            font-size: 9px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--faint);
+            padding: 14px 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Routine block */
+        .block {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 13px 14px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.18s;
+            position: relative;
+            cursor: default;
+            animation: fadeUp 0.4s ease both;
+            margin-bottom: 3px;
+        }
+
+        .block:hover {
+            background: var(--surface);
+            border-color: var(--border);
+        }
+
+        .block:hover .block-actions {
+            opacity: 1;
+        }
+
+        .dot-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 3px;
+            gap: 0;
+            flex-shrink: 0;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .connector {
+            width: 1px;
+            flex: 1;
+            min-height: 18px;
+            background: var(--border);
+            margin-top: 4px;
+        }
+
+        .time-col {
+            min-width: 80px;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.4;
+            padding-top: 1px;
+            flex-shrink: 0;
+        }
+
+        .content-col {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .block-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .block-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+            line-height: 1.5;
+        }
+
+        .block-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+            padding-top: 1px;
+        }
+
+        .action-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+
+        .action-btn:hover {
+            border-color: var(--border2);
+            color: var(--text);
+        }
+
+        .action-btn.del:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(248, 113, 113, 0.08);
+        }
+
+        .action-btn.edit:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Category pills */
+        .cat-pill {
+            display: inline-block;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-radius: 4px;
+            padding: 2px 7px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Stats bar */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 10px;
+            margin-bottom: 28px;
+            animation: fadeUp 0.5s 0.15s ease both;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 420px;
+            transform: translateY(12px) scale(0.98);
+            transition: transform 0.2s;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.open .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.15s;
+            resize: none;
+        }
+
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus {
+            border-color: var(--accent);
+        }
+
+        .field select option {
+            background: #1a1a24;
+        }
+
+        .color-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.selected {
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--accent2);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            padding: 11px 18px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text);
+            border-color: var(--text);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            margin-right: 4px;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid currentColor;
+            opacity: 0.7;
+        }
+
+        /* Reset button */
+        .reset-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            padding: 7px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .reset-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .blocks-container {
+            animation: fadeUp 0.5s 0.2s ease both;
+        }
+
+        /* Drag handle */
+        .drag-handle {
+            cursor: grab;
+            color: var(--faint);
+            font-size: 14px;
+            padding-top: 2px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .block.dragging {
+            opacity: 0.4;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: var(--text);
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.25s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--faint);
+            font-size: 13px;
+        }
+
+        @media (max-width: 480px) {
+            .time-col {
+                min-width: 60px;
+                font-size: 10px;
+            }
+
+            .block-title {
+                font-size: 13px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="glow-blob"></div>
+    <div class="glow-blob2"></div>
+
+    <div class="wrapper">
+        <div class="header">
+            <div class="header-top">
+                <div class="title-block">
+                    <div class="eyebrow">Daily Routine</div>
+                    <h1>Lucky's <span>Schedule</span></h1>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                    <div class="date-chip" id="datechip"></div>
+                    <button class="reset-btn" onclick="resetToDefault()">↺ reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-row" id="stats-row"></div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('clz')">🏫 College Day</button>
+            <button class="tab" onclick="switchTab('hol')">🏖️ Holiday / Saturday</button>
+        </div>
+
+        <div class="blocks-container" id="blocks-container"></div>
+
+        <button class="add-btn" onclick="openModal(null)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            add new block
+        </button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+        <div class="modal" id="modal">
+            <h2 id="modal-title">Add Block</h2>
+            <div class="field">
+                <label>Time</label>
+                <input type="text" id="f-time" placeholder="e.g. 7:00 – 7:30 am">
+            </div>
+            <div class="field">
+                <label>Title</label>
+                <input type="text" id="f-title" placeholder="e.g. Workout">
+            </div>
+            <div class="field">
+                <label>Note (optional)</label>
+                <textarea id="f-sub" rows="2" placeholder="short note or tip..."></textarea>
+            </div>
+            <div class="field">
+                <label>Section</label>
+                <select id="f-section">
+                    <option value="Morning">Morning</option>
+                    <option value="College">College</option>
+                    <option value="Afternoon">Afternoon</option>
+                    <option value="Deep work">Deep work</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Night">Night</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Color</label>
+                <div class="color-row" id="color-row"></div>
+            </div>
+            <div class="modal-btns">
+                <button class="btn-secondary" onclick="closeModal()">cancel</button>
+                <button class="btn-primary" onclick="saveBlock()">save block</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const COLORS = ['#a78bfa', '#34d399', '#fbbf24', '#f87171', '#60a5fa', '#f472b6', '#2dd4bf', '#fb923c', '#e879f9', '#a3e635'];
+        const SECTION_ORDER = ['Morning', 'College', 'Deep work', 'Afternoon', 'Evening', 'Night'];
+
+        const DEFAULT_DATA = {
+            clz: [
+                { id: 1, section: 'Morning', time: '5:00 am', title: 'Wake up', sub: 'Wash up, get ready fast', color: '#60a5fa' },
+                { id: 2, section: 'Morning', time: '5:40 am', title: 'Leave for college', sub: "Walk brisk — that's your cardio", color: '#60a5fa' },
+                { id: 3, section: 'College', time: '~6 am – 1 pm', title: 'Classes', sub: 'Stay focused, take notes', color: '#888' },
+                { id: 4, section: 'College', time: '~1:00 pm', title: 'Head back home', sub: 'Walk back = more cardio done', color: '#888' },
+                { id: 5, section: 'Afternoon', time: '1:00 – 1:30', title: 'Eat + rest', sub: "Don't grind right after returning", color: '#34d399' },
+                { id: 6, section: 'Afternoon', time: '1:30 – 2:15', title: 'Workout', sub: 'The routine we made — 3x per week, rest other days', color: '#f472b6' },
+                { id: 7, section: 'Afternoon', time: '2:15 – 3:15', title: 'Coding / Study', sub: 'Deep focus block, no phone', color: '#a78bfa' },
+                { id: 8, section: 'Evening', time: '3:15 – 4:00', title: 'Drawing / Art', sub: 'Creative break, low pressure', color: '#fbbf24' },
+                { id: 9, section: 'Evening', time: '4:00 – 5:00', title: 'Games / Brawl Stars', sub: 'Hard limit: 1 hour. Daily games here too.', color: '#f87171' },
+                { id: 10, section: 'Evening', time: '5:00 – 7:00', title: 'Free / family time', sub: 'Chill, eat, whatever', color: '#888' },
+                { id: 11, section: 'Night', time: '7:00 – 8:30', title: 'Coding / Study (round 2)', sub: 'Assignments, projects, revision', color: '#a78bfa' },
+                { id: 12, section: 'Night', time: '8:30 – 9:00', title: 'Journal writing', sub: 'Reflect on the day, what you did', color: '#34d399' },
+                { id: 13, section: 'Night', time: '9:00 – 11:00', title: 'Wind down', sub: 'No screens after 10:30 ideally', color: '#888' },
+                { id: 14, section: 'Night', time: '11:00 pm', title: 'Sleep', sub: 'Target 6 hrs minimum on clz days', color: '#60a5fa' },
+            ],
+            hol: [
+                { id: 20, section: 'Morning', time: '7:00 – 7:30', title: 'Wake up', sub: "Don't sleep past 8 — kills the day", color: '#60a5fa' },
+                { id: 21, section: 'Morning', time: '7:30 – 8:15', title: 'Workout', sub: 'Best time to train — fasted or light meal', color: '#f472b6' },
+                { id: 22, section: 'Morning', time: '8:15 – 9:00', title: 'Shower + eat breakfast', sub: 'Proper meal, take your time', color: '#34d399' },
+                { id: 23, section: 'Deep work', time: '9:00 – 11:00', title: 'Coding / Study', sub: "Your best focus hours — use them", color: '#a78bfa' },
+                { id: 24, section: 'Deep work', time: '11:00 – 12:00', title: 'Drawing / Art', sub: 'Creative flow after mental work', color: '#fbbf24' },
+                { id: 25, section: 'Afternoon', time: '12:00 – 1:00', title: 'Lunch + rest', sub: 'Actual break, no screens ideally', color: '#34d399' },
+                { id: 26, section: 'Afternoon', time: '1:00 – 2:00', title: 'Games / Brawl Stars', sub: '1 hour hard cap. Daily games here.', color: '#f87171' },
+                { id: 27, section: 'Afternoon', time: '2:00 – 4:00', title: 'Coding / Study (round 2)', sub: 'Projects, personal stuff, or coursework', color: '#a78bfa' },
+                { id: 28, section: 'Evening', time: '4:00 – 6:00', title: 'Free time / go outside', sub: 'Skill issue if you stay inside all day', color: '#888' },
+                { id: 29, section: 'Evening', time: '6:00 – 7:30', title: 'Coding / personal project', sub: 'Portfolio, side projects, anything fun', color: '#a78bfa' },
+                { id: 30, section: 'Night', time: '7:30 – 8:00', title: 'Journal writing', sub: 'What did you do today, how do you feel', color: '#34d399' },
+                { id: 31, section: 'Night', time: '8:00 – 11:00', title: 'Wind down', sub: 'Eat, relax, family, light content', color: '#888' },
+                { id: 32, section: 'Night', time: '11:00 pm', title: 'Sleep', sub: '8 hrs on holidays — don\'t waste this', color: '#60a5fa' },
+            ]
+        };
+
+        let currentTab = 'clz';
+        let editingId = null;
+        let selectedColor = COLORS[0];
+        let nextId = 100;
+        let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+        // Load from localStorage
+        try {
+            const saved = localStorage.getItem('lucky_routine');
+            if (saved) data = JSON.parse(saved);
+        } catch (e) { }
+
+        function save() {
+            try { localStorage.setItem('lucky_routine', JSON.stringify(data)); } catch (e) { }
+        }
+
+        function resetToDefault() {
+            if (!confirm('Reset everything to default? This will undo all your edits.')) return;
+            data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+            save();
+            render();
+            showToast('Reset to default ✓');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && tab === 'clz') || (i === 1 && tab === 'hol')));
+            render();
+        }
+
+        function render() {
+            const blocks = data[currentTab];
+            const container = document.getElementById('blocks-container');
+            container.innerHTML = '';
+
+            // Group by section
+            const grouped = {};
+            SECTION_ORDER.forEach(s => grouped[s] = []);
+            blocks.forEach(b => {
+                if (!grouped[b.section]) grouped[b.section] = [];
+                grouped[b.section].push(b);
+            });
+
+            let hasAny = false;
+            SECTION_ORDER.forEach(section => {
+                const items = grouped[section];
+                if (!items || items.length === 0) return;
+                hasAny = true;
+
+                const label = document.createElement('div');
+                label.className = 'section-label';
+                label.textContent = section;
+                container.appendChild(label);
+
+                items.forEach((block, idx) => {
+                    const isLast = idx === items.length - 1;
+                    const el = document.createElement('div');
+                    el.className = 'block';
+                    el.dataset.id = block.id;
+                    el.innerHTML = `
+        <div class="dot-col">
+          <div class="dot" style="background:${block.color}"></div>
+          ${!isLast ? '<div class="connector"></div>' : ''}
+        </div>
+        <div class="time-col">${block.time}</div>
+        <div class="content-col">
+          <div class="block-title">${escHtml(block.title)}</div>
+          ${block.sub ? `<div class="block-sub">${escHtml(block.sub)}</div>` : ''}
+        </div>
+        <div class="block-actions">
+          <button class="action-btn edit" onclick="openModal(${block.id})">edit</button>
+          <button class="action-btn del" onclick="deleteBlock(${block.id})">del</button>
+        </div>
+      `;
+                    container.appendChild(el);
+                });
+            });
+
+            if (!hasAny) {
+                container.innerHTML = '<div class="empty-state">no blocks yet — add one below</div>';
+            }
+
+            renderStats();
+        }
+
+        function renderStats() {
+            const blocks = data[currentTab];
+            const sections = [...new Set(blocks.map(b => b.section))].length;
+            const row = document.getElementById('stats-row');
+            row.innerHTML = `
+    <div class="stat-card"><span class="stat-val">${blocks.length}</span><div class="stat-label">blocks</div></div>
+    <div class="stat-card"><span class="stat-val">${sections}</span><div class="stat-label">sections</div></div>
+    <div class="stat-card"><span class="stat-val">${currentTab === 'clz' ? '6' : '1'}</span><div class="stat-label">days/wk</div></div>
+    <div class="stat-card"><span class="stat-val">${currentTab === 'clz' ? '6h' : '8h'}</span><div class="stat-label">target sleep</div></div>
+  `;
+        }
+
+        function openModal(id) {
+            editingId = id;
+            const modal = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = id ? 'Edit Block' : 'Add Block';
+
+            // Build color swatches
+            const cr = document.getElementById('color-row');
+            cr.innerHTML = '';
+            COLORS.forEach(c => {
+                const sw = document.createElement('div');
+                sw.className = 'color-swatch';
+                sw.style.background = c;
+                sw.onclick = () => { selectedColor = c; cr.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); };
+                cr.appendChild(sw);
+            });
+
+            if (id) {
+                const block = data[currentTab].find(b => b.id === id);
+                if (!block) return;
+                document.getElementById('f-time').value = block.time;
+                document.getElementById('f-title').value = block.title;
+                document.getElementById('f-sub').value = block.sub || '';
+                document.getElementById('f-section').value = block.section;
+                selectedColor = block.color;
+                const sw = cr.querySelectorAll('.color-swatch');
+                COLORS.forEach((c, i) => { if (c === block.color) sw[i].classList.add('selected'); });
+            } else {
+                document.getElementById('f-time').value = '';
+                document.getElementById('f-title').value = '';
+                document.getElementById('f-sub').value = '';
+                document.getElementById('f-section').value = 'Morning';
+                selectedColor = COLORS[0];
+                cr.querySelector('.color-swatch').classList.add('selected');
+            }
+
+            modal.classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('open');
+            editingId = null;
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('modal-overlay')) closeModal();
+        }
+
+        function saveBlock() {
+            const time = document.getElementById('f-time').value.trim();
+            const title = document.getElementById('f-title').value.trim();
+            const sub = document.getElementById('f-sub').value.trim();
+            const section = document.getElementById('f-section').value;
+
+            if (!title) { showToast('title is required'); return; }
+
+            if (editingId) {
+                const idx = data[currentTab].findIndex(b => b.id === editingId);
+                if (idx > -1) {
+                    data[currentTab][idx] = { ...data[currentTab][idx], time, title, sub, section, color: selectedColor };
+                }
+                showToast('Block updated ✓');
+            } else {
+                data[currentTab].push({ id: nextId++, time, title, sub, section, color: selectedColor });
+                showToast('Block added ✓');
+            }
+
+            save();
+            render();
+            closeModal();
+        }
+
+        function deleteBlock(id) {
+            data[currentTab] = data[currentTab].filter(b => b.id !== id);
+            save();
+            render();
+            showToast('Block removed');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function escHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Date chip
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const now = new Date();
+        document.getElementById('datechip').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+        // Keyboard shortcut
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+        render();
+    </script>
+</body>
+
+</html>

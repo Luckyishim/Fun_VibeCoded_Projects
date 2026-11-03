@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Usability Engineering Lifecycle — Project Timeline</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#2B2520;
+  --ink-soft:#5C5349;
+  --paper:#FAF6F0;
+  --paper-raised:#FFFFFF;
+  --line:#E3DCCF;
+  --line-soft:#EDE7DA;
+  --stage1:#2F6F6E;
+  --stage2:#4F5A99;
+  --stage3:#B6722E;
+  --stage4:#9C4F6E;
+  --accent:#B6722E;
+  --danger:#A23B3B;
+  --row-h:38px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; background:transparent; }
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:22px 22px 18px;
+  max-width:100%;
+  overflow:hidden;
+}
+
+.header-bar{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+
+h1{
+  font-family:'Source Serif 4', serif;
+  font-weight:600;
+  font-size:21px;
+  margin:0 0 4px 0;
+  letter-spacing:-0.01em;
+}
+
+.subtitle{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin:0;
+  line-height:1.5;
+}
+
+.toolbar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-shrink:0;
+}
+
+button{
+  font-family:'Inter',sans-serif;
+  cursor:pointer;
+  border:none;
+  background:none;
+}
+
+.btn{
+  font-size:12.5px;
+  font-weight:600;
+  padding:7px 13px;
+  border-radius:8px;
+  background:var(--ink);
+  color:var(--paper);
+  transition:opacity .15s ease;
+}
+.btn:hover{ opacity:.82; }
+.btn-ghost{
+  background:transparent;
+  color:var(--ink-soft);
+  border:1px solid var(--line);
+  font-weight:500;
+}
+.btn-ghost:hover{ background:var(--line-soft); }
+
+.zoom{
+  display:flex;
+  align-items:center;
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+}
+.zoom button{
+  width:26px; height:26px;
+  font-size:14px;
+  color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center;
+}
+.zoom button:hover{ background:var(--line-soft); color:var(--ink); }
+.zoom span{ width:1px; height:16px; background:var(--line); }
+
+.legend{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  margin:2px 0 16px 0;
+  font-size:11.5px;
+  color:var(--ink-soft);
+}
+.legend .item{ display:flex; align-items:center; gap:6px; }
+.legend .dot{ width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+.chart-scroll{
+  overflow-x:auto;
+  overflow-y:auto;
+  max-height:560px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--paper-raised);
+  position:relative;
+}
+
+.chart-inner{
+  position:relative;
+  min-width:max-content;
+}
+
+.row{
+  display:flex;
+  align-items:stretch;
+  height:var(--row-h);
+  border-bottom:1px solid var(--line-soft);
+}
+.row:last-child{ border-bottom:none; }
+.row:hover .timeline-cell{ background:#F7F2E8; }
+
+.label-cell{
+  position:sticky;
+  left:0;
+  z-index:5;
+  width:280px;
+  min-width:280px;
+  background:var(--paper-raised);
+  border-right:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+  font-size:12.5px;
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.label-cell:hover{ background:#F7F2E8; }
+.label-text{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.lvl-0 .label-text{ font-weight:700; font-size:13px; }
+.lvl-1 .label-text{ font-weight:500; color:var(--ink); }
+.lvl-2 .label-text{ font-weight:400; color:var(--ink-soft); font-size:12px; }
+
+.header-row .label-cell{ background:var(--ink); color:var(--paper); font-weight:700; font-size:11.5px; letter-spacing:.03em; text-transform:uppercase; }
+
+.timeline-cell{
+  position:relative;
+  flex:1;
+}
+
+.month-band{
+  position:absolute;
+  top:0;
+  height:24px;
+  border-right:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  padding-left:8px;
+  font-size:11px;
+  font-weight:700;
+  color:var(--ink);
+  background:#F1EADC;
+  box-sizing:border-box;
+}
+
+.day-tick{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:var(--line-soft);
+}
+.week-tick{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:var(--line);
+}
+.week-label{
+  position:absolute;
+  top:26px;
+  font-size:10.5px;
+  color:var(--ink-soft);
+  transform:translateX(3px);
+  white-space:nowrap;
+}
+
+.header-stack{ position:relative; height:46px; }
+
+.grid-bg{
+  position:absolute;
+  top:46px; bottom:0; left:0; right:0;
+}
+
+.bar{
+  position:absolute;
+  border-radius:6px;
+  cursor:grab;
+  box-shadow:0 1px 2px rgba(0,0,0,0.18);
+  touch-action:none;
+}
+.bar:active{ cursor:grabbing; }
+.bar .handle{
+  position:absolute;
+  top:0; bottom:0;
+  width:7px;
+  cursor:ew-resize;
+}
+.bar .handle.left{ left:0; border-radius:6px 0 0 6px; }
+.bar .handle.right{ right:0; border-radius:0 6px 6px 0; }
+.bar .handle:hover{ background:rgba(0,0,0,0.15); }
+
+.lvl-0-bar{ height:22px; }
+.lvl-1-bar{ height:16px; }
+.lvl-2-bar{ height:11px; }
+
+/* Modal */
+.overlay{
+  position:fixed; inset:0;
+  background:rgba(43,37,32,0.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+  padding:16px;
+}
+.overlay.open{ display:flex; }
+.modal{
+  background:var(--paper-raised);
+  border-radius:14px;
+  padding:22px;
+  width:100%;
+  max-width:380px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.25);
+}
+.modal h2{
+  font-family:'Source Serif 4', serif;
+  font-size:17px;
+  margin:0 0 14px 0;
+}
+.field{ margin-bottom:12px; }
+.field label{
+  display:block;
+  font-size:11px;
+  font-weight:600;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  margin-bottom:5px;
+}
+.field input[type="text"],
+.field input[type="date"],
+.field select{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  font-size:13px;
+  font-family:'Inter',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+}
+.row-2{ display:flex; gap:10px; }
+.row-2 .field{ flex:1; }
+.color-row{ display:flex; gap:7px; flex-wrap:wrap; margin-top:4px; }
+.swatch{
+  width:22px; height:22px;
+  border-radius:6px;
+  border:2px solid transparent;
+  cursor:pointer;
+}
+.swatch.selected{ border-color:var(--ink); }
+.modal-actions{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:18px;
+}
+.modal-actions .right{ display:flex; gap:8px; }
+.err{ color:var(--danger); font-size:11.5px; margin-top:6px; display:none; }
+
+.hint{ font-size:11px; color:var(--ink-soft); margin-top:10px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header-bar">
+    <div>
+      <h1>Usability Engineering Lifecycle</h1>
+      <p class="subtitle">Project timeline · Jun 30 – Sep 10, 2026<br>Click a task to edit it · drag a bar to move it · drag its edges to resize</p>
+    </div>
+    <div class="toolbar">
+      <div class="zoom">
+        <button id="zoomOut" title="Zoom out">−</button>
+        <span></span>
+        <button id="zoomIn" title="Zoom in">+</button>
+      </div>
+      <button class="btn-ghost btn" id="resetBtn">Reset</button>
+      <button class="btn" id="addBtn">+ Add task</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="chart-scroll" id="chartScroll">
+    <div class="chart-inner" id="chartInner"></div>
+  </div>
+
+  <p class="hint">Your edits are saved automatically and will still be here next time you open this chart.</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Edit task</h2>
+    <div class="field">
+      <label>Task name</label>
+      <input type="text" id="f-name" placeholder="e.g. Heuristic Evaluation">
+    </div>
+    <div class="field">
+      <label>Belongs under</label>
+      <select id="f-parent"></select>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Start date</label>
+        <input type="date" id="f-start" min="2026-06-30" max="2026-09-10">
+      </div>
+      <div class="field">
+        <label>End date</label>
+        <input type="date" id="f-end" min="2026-06-30" max="2026-09-10">
+      </div>
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="color-row" id="colorRow"></div>
+    </div>
+    <div class="err" id="formErr"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" id="deleteBtn">Delete</button>
+      <div class="right">
+        <button class="btn-ghost btn" id="cancelBtn">Cancel</button>
+        <button class="btn" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const RANGE_START = new Date('2026-06-30T00:00:00');
+const RANGE_END   = new Date('2026-09-10T00:00:00');
+const MS_DAY = 86400000;
+const TOTAL_DAYS = Math.round((RANGE_END - RANGE_START)/MS_DAY) + 1;
+const MAX_IDX = TOTAL_DAYS - 1;
+const STORAGE_KEY = 'usability_gantt_tasks_v1';
+
+const PALETTE = ['#2F6F6E','#4F5A99','#B6722E','#9C4F6E','#5C7A3B','#7A4F9C','#3A6FA0','#A0522D'];
+
+let pxPerDay = 18;
+let tasks = [];
+let editingId = null;
+
+function dayIndex(dateStr){
+  return Math.round((new Date(dateStr+'T00:00:00') - RANGE_START)/MS_DAY);
+}
+function indexToDateStr(idx){
+  const d = new Date(RANGE_START.getTime() + idx*MS_DAY);
+  return d.toISOString().slice(0,10);
+}
+function uid(){ return 't' + Math.random().toString(36).slice(2,9); }
+
+function lighten(hex, amt){
+  const c = hex.replace('#','');
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  const mix = (v) => Math.round(v + (255 - v) * amt);
+  const toHex = (v) => v.toString(16).padStart(2,'0');
+  return '#' + toHex(mix(r)) + toHex(mix(g)) + toHex(mix(b));
+}
+
+function defaultTasks(){
+  const s1 = uid(), s2 = uid(), s3 = uid(), s4 = uid();
+  const dg = uid();
+  return [
+    { id:s1, parentId:null, name:'Stage 1: User, Tasks & Environment Analysis', start:'2026-06-30', end:'2026-07-13', color:PALETTE[0] },
+    { id:uid(), parentId:s1, name:'Stakeholder Analysis', start:'2026-06-30', end:'2026-07-03', color:PALETTE[0] },
+    { id:dg,   parentId:s1, name:'Data Gathering & Analysis', start:'2026-07-02', end:'2026-07-09', color:PALETTE[0] },
+    { id:uid(), parentId:dg, name:'User Profile Table', start:'2026-07-02', end:'2026-07-05', color:PALETTE[0] },
+    { id:uid(), parentId:dg, name:'List of user requirement', start:'2026-07-05', end:'2026-07-09', color:PALETTE[0] },
+    { id:uid(), parentId:s1, name:'Task Analysis', start:'2026-07-09', end:'2026-07-13', color:PALETTE[0] },
+
+    { id:s2, parentId:null, name:'Stage 2: Usability Goals, Guidelines & Competitive Analysis', start:'2026-07-13', end:'2026-07-27', color:PALETTE[1] },
+    { id:uid(), parentId:s2, name:'Identifying Usability Goals', start:'2026-07-13', end:'2026-07-17', color:PALETTE[1] },
+    { id:uid(), parentId:s2, name:'Design Principles Mapping with Usability Goals', start:'2026-07-17', end:'2026-07-22', color:PALETTE[1] },
+    { id:uid(), parentId:s2, name:'Competitive Analysis', start:'2026-07-22', end:'2026-07-27', color:PALETTE[1] },
+
+    { id:s3, parentId:null, name:'Stage 3: Design & Prototype', start:'2026-07-27', end:'2026-08-24', color:PALETTE[2] },
+    { id:uid(), parentId:s3, name:'Parallel Design (Sketches)', start:'2026-07-27', end:'2026-08-03', color:PALETTE[2] },
+    { id:uid(), parentId:s3, name:'Peer-to-Peer Evaluation', start:'2026-08-03', end:'2026-08-07', color:PALETTE[2] },
+    { id:uid(), parentId:s3, name:'Participatory Design — Card Sorting', start:'2026-08-07', end:'2026-08-12', color:PALETTE[2] },
+    { id:uid(), parentId:s3, name:'Style Guide', start:'2026-08-12', end:'2026-08-17', color:PALETTE[2] },
+    { id:uid(), parentId:s3, name:'Final Prototype Screenshots & Design Rationale', start:'2026-08-17', end:'2026-08-24', color:PALETTE[2] },
+
+    { id:s4, parentId:null, name:'Stage 4: Formative Evaluation', start:'2026-08-24', end:'2026-09-10', color:PALETTE[3] },
+    { id:uid(), parentId:s4, name:'DECIDE Framework', start:'2026-08-24', end:'2026-08-29', color:PALETTE[3] },
+    { id:uid(), parentId:s4, name:'Usability Testing', start:'2026-08-29', end:'2026-09-05', color:PALETTE[3] },
+    { id:uid(), parentId:s4, name:'Heuristic Evaluation', start:'2026-09-05', end:'2026-09-10', color:PALETTE[3] },
+  ];
+}
+
+async function loadTasks(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      tasks = JSON.parse(res.value);
+      return;
+    }
+  }catch(e){ /* no saved data yet */ }
+  tasks = defaultTasks();
+  saveTasks();
+}
+
+async function saveTasks(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false);
+  }catch(e){ console.error('save failed', e); }
+}
+
+function depthOf(task){
+  let d = 0, cur = task;
+  while(cur.parentId){
+    cur = tasks.find(t => t.id === cur.parentId);
+    if(!cur) break;
+    d++;
+  }
+  return d;
+}
+
+function orderedTasks(){
+  const out = [];
+  function walk(parentId){
+    tasks.filter(t => t.parentId === parentId).forEach(t => {
+      out.push(t);
+      walk(t.id);
+    });
+  }
+  walk(null);
+  return out;
+}
+
+function monthBands(){
+  const bands = [];
+  let cur = new Date(RANGE_START);
+  let curKey = null, curStartIdx = 0, count = 0;
+  for(let i=0;i<TOTAL_DAYS;i++){
+    const d = new Date(RANGE_START.getTime() + i*MS_DAY);
+    const key = d.getFullYear()+'-'+d.getMonth();
+    if(key !== curKey){
+      if(curKey !== null) bands.push({ label: monthLabel(curStartIdx), startIdx: curStartIdx, days: count });
+      curKey = key; curStartIdx = i; count = 1;
+    } else {
+      count++;
+    }
+  }
+  bands.push({ label: monthLabel(curStartIdx), startIdx: curStartIdx, days: count });
+  return bands;
+}
+function monthLabel(idx){
+  const d = new Date(RANGE_START.getTime() + idx*MS_DAY);
+  return d.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+}
+function shortDate(idx){
+  const d = new Date(RANGE_START.getTime() + idx*MS_DAY);
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function render(){
+  renderLegend();
+  const inner = document.getElementById('chartInner');
+  inner.innerHTML = '';
+  const timelineWidth = TOTAL_DAYS * pxPerDay;
+
+  // header row
+  const headerRow = document.createElement('div');
+  headerRow.className = 'row header-row';
+  headerRow.style.height = '46px';
+  const headerLabel = document.createElement('div');
+  headerLabel.className = 'label-cell';
+  headerLabel.textContent = 'Task';
+  headerRow.appendChild(headerLabel);
+
+  const headerTimeline = document.createElement('div');
+  headerTimeline.className = 'timeline-cell';
+  headerTimeline.style.width = timelineWidth + 'px';
+  const headerStack = document.createElement('div');
+  headerStack.className = 'header-stack';
+  headerStack.style.width = timelineWidth + 'px';
+
+  monthBands().forEach(b => {
+    const band = document.createElement('div');
+    band.className = 'month-band';
+    band.style.left = (b.startIdx*pxPerDay) + 'px';
+    band.style.width = (b.days*pxPerDay) + 'px';
+    band.textContent = b.label;
+    headerStack.appendChild(band);
+  });
+
+  for(let i=0;i<TOTAL_DAYS;i++){
+    const d = new Date(RANGE_START.getTime() + i*MS_DAY);
+    const tick = document.createElement('div');
+    const isMonday = d.getDay() === 1;
+    tick.className = isMonday ? 'week-tick' : 'day-tick';
+    tick.style.left = (i*pxPerDay) + 'px';
+    tick.style.top = isMonday ? '24px' : '0';
+    headerStack.appendChild(tick);
+    if(isMonday || i===0){
+      const lbl = document.createElement('div');
+      lbl.className = 'week-label';
+      lbl.style.left = (i*pxPerDay) + 'px';
+      lbl.textContent = shortDate(i);
+      headerStack.appendChild(lbl);
+    }
+  }
+  headerTimeline.appendChild(headerStack);
+  headerRow.appendChild(headerTimeline);
+  inner.appendChild(headerRow);
+
+  // task rows
+  orderedTasks().forEach(task => {
+    const depth = depthOf(task);
+    const row = document.createElement('div');
+    row.className = 'row lvl-' + Math.min(depth,2);
+
+    const labelCell = document.createElement('div');
+    labelCell.className = 'label-cell';
+    labelCell.style.paddingLeft = (10 + depth*16) + 'px';
+    const labelText = document.createElement('span');
+    labelText.className = 'label-text';
+    labelText.textContent = task.name;
+    labelCell.appendChild(labelText);
+    labelCell.addEventListener('click', () => openModal(task.id));
+    row.appendChild(labelCell);
+
+    const timelineCell = document.createElement('div');
+    timelineCell.className = 'timeline-cell';
+    timelineCell.style.width = timelineWidth + 'px';
+
+    // subtle vertical grid lines behind bars
+    for(let i=0;i<TOTAL_DAYS;i++){
+      const d = new Date(RANGE_START.getTime() + i*MS_DAY);
+      if(d.getDay() === 1){
+        const gl = document.createElement('div');
+        gl.style.position = 'absolute';
+        gl.style.top = 0; gl.style.bottom = 0;
+        gl.style.left = (i*pxPerDay)+'px';
+        gl.style.width = '1px';
+        gl.style.background = 'var(--line-soft)';
+        timelineCell.appendChild(gl);
+      }
+    }
+
+    const startIdx = dayIndex(task.start);
+    const endIdx = dayIndex(task.end);
+    const bar = document.createElement('div');
+    const barClass = depth === 0 ? 'lvl-0-bar' : (depth === 1 ? 'lvl-1-bar' : 'lvl-2-bar');
+    bar.className = 'bar ' + barClass;
+    bar.style.background = task.color;
+    bar.style.left = (startIdx*pxPerDay) + 'px';
+    bar.style.width = Math.max(pxPerDay*0.6, (endIdx-startIdx+1)*pxPerDay - 2) + 'px';
+    bar.style.top = ((38 - (barClass==='lvl-0-bar'?22:barClass==='lvl-1-bar'?16:11))/2) + 'px';
+    bar.title = task.name + '  (' + shortDate(startIdx) + ' – ' + shortDate(endIdx) + ')';
+
+    const leftHandle = document.createElement('div');
+    leftHandle.className = 'handle left';
+    const rightHandle = document.createElement('div');
+    rightHandle.className = 'handle right';
+    bar.appendChild(leftHandle);
+    bar.appendChild(rightHandle);
+
+    leftHandle.addEventListener('pointerdown', e => startDrag(e, task, 'resize-start'));
+    rightHandle.addEventListener('pointerdown', e => startDrag(e, task, 'resize-end'));
+    bar.addEventListener('pointerdown', e => {
+      if(e.target === leftHandle || e.target === rightHandle) return;
+      startDrag(e, task, 'move');
+    });
+
+    timelineCell.appendChild(bar);
+    row.appendChild(timelineCell);
+    inner.appendChild(row);
+  });
+}
+
+function startDrag(e, task, mode){
+  e.preventDefault();
+  e.stopPropagation();
+  const startX = e.clientX;
+  const origStart = dayIndex(task.start);
+  const origEnd = dayIndex(task.end);
+  let moved = false;
+
+  function onMove(ev){
+    const dx = ev.clientX - startX;
+    if(Math.abs(dx) > 4) moved = true;
+    const dayDelta = Math.round(dx / pxPerDay);
+    let newStart = origStart, newEnd = origEnd;
+    if(mode === 'move'){
+      newStart = origStart + dayDelta;
+      newEnd = origEnd + dayDelta;
+      if(newStart < 0){ newEnd += -newStart; newStart = 0; }
+      if(newEnd > MAX_IDX){ newStart -= (newEnd - MAX_IDX); newEnd = MAX_IDX; }
+    } else if(mode === 'resize-start'){
+      newStart = Math.min(origEnd, Math.max(0, origStart + dayDelta));
+    } else if(mode === 'resize-end'){
+      newEnd = Math.max(origStart, Math.min(MAX_IDX, origEnd + dayDelta));
+    }
+    task.start = indexToDateStr(newStart);
+    task.end = indexToDateStr(newEnd);
+    render();
+  }
+  function onUp(){
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    if(moved){
+      saveTasks();
+    } else {
+      task.start = indexToDateStr(origStart);
+      task.end = indexToDateStr(origEnd);
+      openModal(task.id);
+    }
+  }
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+}
+
+function renderLegend(){
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  const stages = tasks.filter(t => t.parentId === null);
+  stages.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'item';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.background = s.color;
+    item.appendChild(dot);
+    const label = document.createElement('span');
+    label.textContent = s.name.replace(/^Stage \d+:\s*/,'');
+    item.appendChild(label);
+    legend.appendChild(item);
+  });
+}
+
+// ---- Modal ----
+const overlay = document.getElementById('overlay');
+const fName = document.getElementById('f-name');
+const fParent = document.getElementById('f-parent');
+const fStart = document.getElementById('f-start');
+const fEnd = document.getElementById('f-end');
+const colorRow = document.getElementById('colorRow');
+const formErr = document.getElementById('formErr');
+let selectedColor = PALETTE[0];
+
+function populateParentOptions(excludeId){
+  fParent.innerHTML = '';
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'None (top-level stage)';
+  fParent.appendChild(none);
+  orderedTasks().forEach(t => {
+    if(t.id === excludeId) return;
+    // prevent choosing a descendant of the task being edited as its own parent
+    if(excludeId && isDescendant(t.id, excludeId)) return;
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = '— '.repeat(depthOf(t)) + t.name;
+    fParent.appendChild(opt);
+  });
+}
+function isDescendant(candidateId, ancestorId){
+  let cur = tasks.find(t => t.id === candidateId);
+  while(cur && cur.parentId){
+    if(cur.parentId === ancestorId) return true;
+    cur = tasks.find(t => t.id === cur.parentId);
+  }
+  return false;
+}
+
+function buildColorSwatches(){
+  colorRow.innerHTML = '';
+  PALETTE.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch' + (hex === selectedColor ? ' selected' : '');
+    sw.style.background = hex;
+    sw.addEventListener('click', () => {
+      selectedColor = hex;
+      buildColorSwatches();
+    });
+    colorRow.appendChild(sw);
+  });
+}
+
+function openModal(id){
+  editingId = id;
+  const task = id ? tasks.find(t => t.id === id) : null;
+  document.getElementById('modalTitle').textContent = task ? 'Edit task' : 'Add task';
+  document.getElementById('deleteBtn').style.display = task ? 'inline-block' : 'none';
+  formErr.style.display = 'none';
+  populateParentOptions(id);
+
+  if(task){
+    fName.value = task.name;
+    fParent.value = task.parentId || '';
+    fStart.value = task.start;
+    fEnd.value = task.end;
+    selectedColor = task.color;
+  } else {
+    fName.value = '';
+    fParent.value = '';
+    fStart.value = '2026-06-30';
+    fEnd.value = '2026-07-03';
+    selectedColor = PALETTE[0];
+  }
+  buildColorSwatches();
+  overlay.classList.add('open');
+}
+function closeModal(){
+  overlay.classList.remove('open');
+  editingId = null;
+}
+
+document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const name = fName.value.trim();
+  const parentId = fParent.value || null;
+  const start = fStart.value;
+  const end = fEnd.value;
+  if(!name){ formErr.textContent = 'Give this task a name.'; formErr.style.display='block'; return; }
+  if(!start || !end){ formErr.textContent = 'Pick a start and end date.'; formErr.style.display='block'; return; }
+  if(new Date(end) < new Date(start)){ formErr.textContent = 'End date must be on or after the start date.'; formErr.style.display='block'; return; }
+  if(new Date(start) < RANGE_START || new Date(end) > RANGE_END){ formErr.textContent = 'Dates must fall between Jun 30 and Sep 10, 2026.'; formErr.style.display='block'; return; }
+
+  if(editingId){
+    const task = tasks.find(t => t.id === editingId);
+    task.name = name; task.parentId = parentId; task.start = start; task.end = end; task.color = selectedColor;
+  } else {
+    tasks.push({ id: uid(), parentId, name, start, end, color: selectedColor });
+  }
+  saveTasks();
+  closeModal();
+  render();
+});
+
+document.getElementById('deleteBtn').addEventListener('click', () => {
+  if(!editingId) return;
+  const toDelete = new Set([editingId]);
+  let changed = true;
+  while(changed){
+    changed = false;
+    tasks.forEach(t => {
+      if(t.parentId && toDelete.has(t.parentId) && !toDelete.has(t.id)){
+        toDelete.add(t.id); changed = true;
+      }
+    });
+  }
+  if(toDelete.size > 1 && !confirm('This task has ' + (toDelete.size-1) + ' subtask(s) under it. Delete all of them too?')) return;
+  tasks = tasks.filter(t => !toDelete.has(t.id));
+  saveTasks();
+  closeModal();
+  render();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('Reset the chart back to the original plan? This will remove any tasks you added or changed.')) return;
+  tasks = defaultTasks();
+  saveTasks();
+  render();
+});
+
+document.getElementById('zoomIn').addEventListener('click', () => { pxPerDay = Math.min(40, pxPerDay+4); render(); });
+document.getElementById('zoomOut').addEventListener('click', () => { pxPerDay = Math.max(8, pxPerDay-4); render(); });
+
+(async function init(){
+  await loadTasks();
+  render();
+})();
+</script>
+</body>
+</html>
