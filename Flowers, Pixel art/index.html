@@ -1,220 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Loves me, loves me not</title>
-  <style>
-    :root {
-      --bg: #e9ecf8;
-      --fg: #2a3260;
-      box-sizing: border-box;
-      padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px)
-    }
-
-    @media (prefers-color-scheme:dark) {
-      :root:not([data-theme="light"]) {
-        --bg: #070914;
-        --fg: #9fb0ee
-      }
-    }
-
-    :root[data-theme="dark"] {
-      --bg: #070914;
-      --fg: #9fb0ee
-    }
-
-    html,
-    body {
-      height: 100%;
-      margin: 0
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      font-family: ui-monospace, Menlo, Consolas, monospace;
-      font-size: 13px;
-      user-select: none
-    }
-
-    canvas {
-      image-rendering: pixelated;
-      cursor: pointer;
-      border: 2px solid var(--fg);
-      touch-action: manipulation
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loves me, loves me not</title>
+<style>
+:root{--bg:#0c1550;--fg:#2a3260;--card:#fff;--line:#b8c0e8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fg:#9fb0ee;--card:#10142e;--line:#2a3470}}
+:root[data-theme="dark"]{--fg:#9fb0ee;--card:#10142e;--line:#2a3470}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;-webkit-tap-highlight-color:transparent}
+#scene{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated;z-index:0}
+#setup,#game{position:relative;z-index:1}
+#setup{background:var(--card);border:3px solid var(--line);box-shadow:5px 5px 0 rgba(0,0,0,.4);padding:20px;width:min(92vw,340px);display:flex;flex-direction:column;gap:12px;max-height:92vh;max-height:92dvh;overflow:auto}
+#setup h1{font-size:17px;margin:0 0 2px;text-align:center}
+.row{display:flex;flex-direction:column;gap:6px}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+button,input{font:inherit;color:var(--fg)}
+.opts button,#go,#back{border:2px solid var(--line);background:transparent;padding:6px 12px;min-height:40px;cursor:pointer}
+.opts button.on{background:var(--fg);color:var(--card);border-color:var(--fg)}
+.opts button.sw{width:38px;height:38px;min-height:0;padding:0;border-radius:50%}
+.opts button.sw.on{outline:2px solid var(--fg);outline-offset:2px}
+#nm{border:2px solid var(--line);background:transparent;padding:9px;font-size:16px}
+#go{background:var(--fg);color:var(--card);border-color:var(--fg);font-weight:bold;min-height:46px}
+#game{display:none;position:fixed;inset:0;user-select:none;-webkit-user-select:none;pointer-events:none}
+#scene{cursor:pointer;touch-action:manipulation}
+#back{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;min-height:0;padding:0;font-size:22px;line-height:1;background:var(--card);border:3px solid var(--line);box-shadow:3px 3px 0 rgba(0,0,0,.4);color:var(--fg);cursor:pointer;pointer-events:auto}
+#back:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.4)}
+#hint{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);max-width:92vw;white-space:nowrap;background:rgba(8,12,36,.78);color:#fff;border:2px solid rgba(255,255,255,.55);box-shadow:3px 3px 0 rgba(0,0,0,.35);padding:8px 16px;font-size:13px;letter-spacing:.5px;pointer-events:none}
+</style>
 </head>
-
 <body>
-  <canvas id="c" width="120" height="160"></canvas>
-  <div>tap or press space to pluck a petal</div>
-  <script>
-    const W = 120, H = 160, GY = 126, cv = document.getElementById('c'), ctx = cv.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    function fit() { const s = Math.max(1, Math.floor(Math.min(innerWidth * .92 / W, (innerHeight - 70) / H))); cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px' }
-    addEventListener('resize', fit); fit();
-    const px = (c, x, y, col) => { c.fillStyle = col; c.fillRect(x | 0, y | 0, 1, 1) };
-    const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]].map(r => r.map(v => (v + .5) / 16));
-    const rnd = (a, b) => a + Math.random() * (b - a);
+<canvas id="scene"></canvas>
+<div id="setup">
+  <h1>loves me, loves me not</h1>
+  <div class="row">Who is it?<div class="opts" data-k="who"><button class="on" data-v="he">He</button><button data-v="she">She</button></div></div>
+  <div class="row">Name (optional)<input id="nm" maxlength="12" placeholder="e.g. Anu" autocomplete="off"></div>
+  <div class="row">Petals<div class="opts" data-k="petal">
+    <button class="sw on" data-v="white" style="background:#d4e4f8"></button><button class="sw" data-v="pink" style="background:#ffc4dc"></button><button class="sw" data-v="yellow" style="background:#ffe36a"></button><button class="sw" data-v="lavender" style="background:#d8c4ff"></button><button class="sw" data-v="red" style="background:#ff8a8a"></button></div></div>
+  <div class="row">Meadow flowers<div class="opts" data-k="meadow"><button data-v="0">None</button><button data-v="35">Some</button><button class="on" data-v="80">Lots</button></div></div>
+  <div class="row">Time<div class="opts" data-k="time"><button class="on" data-v="night">Night</button><button data-v="dusk">Dusk</button><button data-v="day">Day</button><button data-v="dawn">Dawn</button></div></div>
+  <button id="go">Start plucking</button>
+</div>
+<div id="game">
+  <button id="back" title="Change settings" aria-label="Change settings">&#9881;&#xFE0E;</button>
+  <div id="hint">tap a petal to pluck</div>
+</div>
+<script>
+const W=120,H=160,GY=126,sc=document.getElementById('scene'),sctx=sc.getContext('2d');
+let ctx=sctx,VW=W,OX=0;const hint=document.getElementById('hint');
+const px=(c,x,y,col)=>{c.fillStyle=col;c.fillRect(x|0,y|0,1,1)};
+const B=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]].map(r=>r.map(v=>(v+.5)/16));
+const rnd=(a,b)=>a+Math.random()*(b-a);
 
-    // ---------- static background (sky, moon, hills, ground) ----------
-    const bg = document.createElement('canvas'); bg.width = W; bg.height = H;
-    (function () {
-      const g = bg.getContext('2d');
-      const bands = ['#070b2e', '#0c1550', '#142277', '#2a3a9e', '#4a4aa8', '#8a5aa0'];
-      for (let y = 0; y < H; y++)for (let x = 0; x < W; x++) {
-        const t = Math.min(y / 104, 1) * 5, i = Math.floor(t), f = t - i;
-        px(g, x, y, f > B[y & 3][x & 3] ? bands[Math.min(i + 1, 5)] : bands[i]);
-      }
-      const mx = 96, my = 30;
-      for (let y = 0; y < 80; y++)for (let x = 0; x < W; x++) {
-        const d = Math.hypot(x - mx, y - my);
-        if (d <= 6) px(g, x, y, d < 3 && (x + y) % 5 === 0 ? '#d6d39a' : '#ece9b8');
-        else if (d < 18 && (1 - (d - 6) / 12) * .55 > B[y & 3][x & 3]) px(g, x, y, '#5a6ec8');
-      }
-      for (let x = 0; x < W; x++) {
-        const h1 = 100 + 5 * Math.sin(x * .045 + 1) + 3 * Math.sin(x * .11);
-        const h2 = 112 + 4 * Math.sin(x * .07 + 3) + 2 * Math.sin(x * .2);
-        for (let y = Math.round(h1); y < H; y++)px(g, x, y, '#1b2a6e');
-        for (let y = Math.round(h2); y < H; y++)px(g, x, y, '#101a52');
-      }
-      for (let y = GY; y < H; y++)for (let x = 0; x < W; x++)px(g, x, y, (x + y) % 2 && B[y & 3][x & 3] > .5 ? '#1d5226' : '#16401f');
-    })();
+// ---------- options ----------
+const PETAL={white:['#d4e4f8','#9fb8e0'],pink:['#ffc4dc','#e88fb4'],yellow:['#ffe36a','#e0b020'],lavender:['#d8c4ff','#a78be0'],red:['#ff8a8a','#d85050']};
+const THEMES={
+ night:{sky:['#070b2e','#0c1550','#142277','#2a3a9e','#4a4aa8','#8a5aa0'],body:{x:98,y:42,r:6,c:'#ece9b8',c2:'#d6d39a',g:'#5a6ec8'},stars:1,h1:'#1b2a6e',h2:'#101a52',gr:['#16401f','#1d5226'],gc:['#15501f','#1f6b2a','#2f8a35','#49a844'],lv:'#ffafc0',nt:'#a9bcff',sh:'#0c1550'},
+ dusk:{sky:['#2b1b5e','#6b2f86','#b8457a','#e8705a','#f5a050','#ffd27a'],body:{x:88,y:92,r:7,c:'#fff0b0',c2:'#ffd27a',g:'#f5a050'},stars:2,h1:'#5a2a6e',h2:'#3a1a52',gr:['#1f3a1c','#2a5226'],gc:['#1a3a1c','#2a5a26','#3f7a30','#6a9a3a'],lv:'#ffd0e0',nt:'#ffe0a0',sh:'#2b1b5e'},
+ day:{sky:['#3a8fe0','#5aa8ee','#7bbdf5','#a3d4fa','#c8e6fc','#e6f4ff'],body:{x:96,y:42,r:6,c:'#fff6b0',c2:'#ffe060',g:'#d8efff'},stars:0,clouds:1,cb:'#c8dff5',h1:'#4aa05a',h2:'#2f8048',gr:['#2f8a35','#3fa043'],gc:['#2a7a30','#3a9a3c','#58b848','#82d060'],lv:'#ff4f7a',nt:'#1f4fc0',sh:'#ffffff'},
+ dawn:{sky:['#3b4a9a','#6a78c0','#a88ac8','#e8a0b8','#ffc8a0','#ffe8b8'],body:{x:28,y:92,r:6,c:'#fff2c0',c2:'#ffd890',g:'#ffd0b0'},stars:2,clouds:1,cb:'#f5c8d8',h1:'#4a5a8e',h2:'#34406e',gr:['#27492c','#33603a'],gc:['#1f4a28','#2f6a36','#4a8a48','#74aa5a'],lv:'#ffd0e0',nt:'#dbe6ff',sh:'#3b4a9a'}
+};
+const cfg={who:'he',name:'',petal:'white',meadow:80,time:'night'};
+let th=THEMES.night,PC=PETAL.white,playing=false,started=false;
 
-    // ---------- stars & grass ----------
-    const stars = [];
-    for (let i = 0; i < 34; i++) { const x = rnd(2, W - 2), y = rnd(2, 84); if (Math.hypot(x - 96, y - 30) > 20) stars.push({ x: x | 0, y: y | 0, ph: rnd(0, 6.28), big: Math.random() < .2 }) }
-    const blades = [];
-    for (let i = 0; i < 260; i++)blades.push({ x: rnd(0, W) | 0, y: rnd(GY + 2, H - 1) | 0, h: rnd(3, 9) | 0, ph: rnd(0, 6.28), c: (Math.random() * 4) | 0 });
-    blades.sort((a, b) => a.y - b.y);
-    const GC = ['#15501f', '#1f6b2a', '#2f8a35', '#49a844'];
-    const FC = [['#ffffff', '#f5d04a'], ['#ff9fc0', '#fff3b0'], ['#ffe35a', '#c8741a'], ['#c9a6ff', '#fff3b0'], ['#9fd0ff', '#fff3b0']];
-    const bgf = [];
-    for (let i = 0; i < 80; i++) { const c = FC[(Math.random() * FC.length) | 0]; bgf.push({ x: rnd(2, W - 2) | 0, y: rnd(GY + 3, H - 2) | 0, h: rnd(5, 15) | 0, pc: c[0], cc: c[1], ph: rnd(0, 6.28) }) }
-    bgf.sort((a, b) => a.y - b.y);
-
-    // ---------- 3x5 pixel font ----------
-    const FONT = { L: '100100100100111', O: '111101101101111', V: '101101101101010', E: '111100110100111', S: '111100111001111', M: '101111111101101', N: '111101101101101', T: '111010010010010' };
-    function text(str, x, y, col, sh) {
-      for (const ch of str) {
-        const g = FONT[ch];
-        if (g) for (let i = 0; i < 15; i++)if (g[i] === '1') {
-          const gx = x + (i % 3) * 2, gy = y + ((i / 3) | 0) * 2;
-          ctx.fillStyle = sh; ctx.fillRect(gx + 1, gy + 1, 2, 2);
-        }
-        if (g) for (let i = 0; i < 15; i++)if (g[i] === '1') { ctx.fillStyle = col; ctx.fillRect(x + (i % 3) * 2, y + ((i / 3) | 0) * 2, 2, 2) }
-        x += 8;
-      }
+// ---------- scenes (one for the game canvas, one wide backdrop) ----------
+function mkScene(w){
+  const S={w,bg:document.createElement('canvas'),stars:[],clouds:[],blades:[],fl:[]};
+  S.bg.width=w;S.bg.height=H;
+  for(let i=0;i<Math.round(34*w/120);i++)S.stars.push({x:rnd(2,w-2)|0,y:rnd(2,84)|0,ph:rnd(0,6.28),big:Math.random()<.2,k:Math.random()<.5});
+  for(let i=0;i<4+Math.floor(w/60);i++)S.clouds.push({x:rnd(0,w),y:rnd(28,62)|0,w:rnd(14,26)|0,sp:rnd(1.5,4)});
+  for(let i=0;i<Math.round(260*w/120);i++)S.blades.push({x:rnd(0,w)|0,y:rnd(GY+2,H-1)|0,h:rnd(3,9)|0,ph:rnd(0,6.28),c:(Math.random()*4)|0});
+  S.blades.sort((a,b)=>a.y-b.y);
+  return S;
+}
+function buildSky(S){
+  const g=S.bg.getContext('2d'),b=th.body,w=S.w,bx=b.x*w/120;
+  for(let y=0;y<H;y++)for(let x=0;x<w;x++){
+    const t=Math.min(y/104,1)*5,i=Math.floor(t),f=t-i;
+    px(g,x,y,f>B[y&3][x&3]?th.sky[Math.min(i+1,5)]:th.sky[i]);
+  }
+  for(let y=0;y<GY;y++)for(let x=0;x<w;x++){
+    const d=Math.hypot(x-bx,y-b.y);
+    if(d<=b.r)px(g,x,y,d<b.r/2&&(x+y)%5===0?b.c2:b.c);
+    else if(d<b.r*3&&(1-(d-b.r)/(b.r*2))*.55>B[y&3][x&3])px(g,x,y,b.g);
+  }
+  for(let x=0;x<w;x++){
+    const h1=100+5*Math.sin(x*.045+1)+3*Math.sin(x*.11),h2=112+4*Math.sin(x*.07+3)+2*Math.sin(x*.2);
+    for(let y=Math.round(h1);y<H;y++)px(g,x,y,th.h1);
+    for(let y=Math.round(h2);y<H;y++)px(g,x,y,th.h2);
+  }
+  for(let y=GY;y<H;y++)for(let x=0;x<w;x++)px(g,x,y,(x+y)%2&&B[y&3][x&3]>.5?th.gr[1]:th.gr[0]);
+}
+const FC=[['#ffffff','#f5d04a'],['#ff9fc0','#fff3b0'],['#ffe35a','#c8741a'],['#c9a6ff','#fff3b0'],['#9fd0ff','#fff3b0']];
+function makeFlowers(S,n){
+  S.fl=[];
+  for(let i=0;i<n;i++){const c=FC[(Math.random()*FC.length)|0];S.fl.push({x:rnd(2,S.w-2)|0,y:rnd(GY+3,H-2)|0,h:rnd(5,15)|0,pc:c[0],cc:c[1],ph:rnd(0,6.28)})}
+  S.fl.sort((a,b)=>a.y-b.y);
+}
+function drawScene(c,S,t){
+  const w=S.w,b=th.body,bx=b.x*w/120;
+  c.drawImage(S.bg,0,0);
+  if(th.clouds)for(const cl of S.clouds){
+    const x0=((cl.x+t*cl.sp)%(w+2*cl.w+8))-cl.w;
+    for(let i=0;i<cl.w;i++){const h=Math.round(Math.sin(i/cl.w*Math.PI)*3+1);for(let j=0;j<h;j++)px(c,x0+i,cl.y-j,j===0?th.cb:'#ffffff')}
+  }
+  if(th.stars)for(const s of S.stars){
+    if(th.stars===2&&(s.y>50||s.k))continue;
+    if(Math.hypot(s.x-bx,s.y-b.y)<20)continue;
+    const v=Math.sin(t*2+s.ph);
+    px(c,s.x,s.y,v>.6?'#ffffff':v>-.2?'#9fb4ff':'#4a5fb8');
+    if(s.big&&v>.5)for(const[d,e]of[[1,0],[-1,0],[0,1],[0,-1]])px(c,s.x+d,s.y+e,'#cfdcff');
+  }
+  for(const bl of S.blades){
+    for(let j=0;j<bl.h;j++){
+      const off=Math.round(Math.sin(t*1.5+bl.ph+bl.x*.2)*j/bl.h*1.3);
+      px(c,bl.x+off,bl.y-j,th.gc[Math.min(3,bl.c+(j>bl.h/2?1:0))]);
     }
+  }
+  for(const f of S.fl){
+    const o=Math.round(Math.sin(t*1.5+f.ph)*1.2);
+    for(let j=0;j<f.h;j++){const so=Math.round(Math.sin(t*1.5+f.ph)*j/f.h*1.2);px(c,f.x+so,f.y-j,j%3?'#2a7a30':'#1f6b2a')}
+    const fx=f.x+o,fy=f.y-f.h;
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]])px(c,fx+dx,fy+dy,f.pc);
+    if(f.h>10)for(const[dx,dy]of[[1,1],[-1,-1],[1,-1],[-1,1]])px(c,fx+dx,fy+dy,f.pc);
+    px(c,fx,fy,f.cc);
+  }
+}
+let S2=null;
+function fit(){
+  const w=Math.min(420,Math.max(80,Math.round(H*innerWidth/innerHeight)));
+  if(!S2||S2.w!==w){
+    S2=mkScene(w);sc.width=w;sc.height=H;sctx.imageSmoothingEnabled=false;
+    buildSky(S2);makeFlowers(S2,Math.round(cfg.meadow*w/120));
+  }
+  VW=w;OX=Math.round((w-W)/2);
+}
+addEventListener('resize',fit);fit();
 
-    // ---------- petal / leaf shape ----------
-    function blob(bx, by, ang, len, wid, c1, c2) {
-      const ca = Math.cos(ang), sa = Math.sin(ang), n = len * 1.6;
-      for (let k = 0; k <= n; k++) {
-        const t = k / n, w = Math.sin(Math.PI * Math.pow(t, .75)) * wid / 2;
-        for (let o = -w; o <= w; o += .5) {
-          px(ctx, Math.round(bx + ca * len * t - sa * o), Math.round(by + sa * len * t + ca * o), o > 0.4 ? c2 : c1);
-        }
-      }
+// ---------- 3x5 pixel font ----------
+const F={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',M:'101111111101101',N:'111101101101101',O:'111101101101111',P:'111101111100100',Q:'111101101111001',R:'110101110101101',S:'111100111001111',T:'111010010010010',U:'101101101101111',V:'101101101101010',W:'101101111111101',X:'101101010101101',Y:'101101010010010',Z:'111001010100111'};
+function text(s,y,sc,col,sh){
+  let x=Math.round((VW-(s.length*4-1)*sc)/2);
+  for(const ch of s){
+    const g=F[ch];
+    if(g)for(let p=0;p<2;p++)for(let i=0;i<15;i++)if(g[i]==='1'){
+      ctx.fillStyle=p?col:sh;
+      ctx.fillRect(x+(i%3)*sc+(p?0:1),y+((i/3)|0)*sc+(p?0:1),sc,sc);
     }
+    x+=4*sc;
+  }
+}
+function blob(bx,by,ang,len,wid,c1,c2){
+  const ca=Math.cos(ang),sa=Math.sin(ang),n=len*1.6;
+  for(let k=0;k<=n;k++){
+    const t=k/n,w=Math.sin(Math.PI*Math.pow(t,.75))*wid/2;
+    for(let o=-w;o<=w;o+=.5)px(ctx,Math.round(bx+ca*len*t-sa*o),Math.round(by+sa*len*t+ca*o),o>0.4?c2:c1);
+  }
+}
 
-    // ---------- state ----------
-    let petals, plucked, showText, loves, rot;
-    function reset() {
-      const n = 9 + ((Math.random() * 5) | 0); rot = rnd(0, 6.28);
-      petals = Array.from({ length: n }, (_, i) => ({ a: i * 6.2832 / n, state: 'on' }));
-      plucked = 0; showText = false; loves = false;
+// ---------- game state ----------
+let petals,plucked,showText,loves,rot;
+function reset(){
+  const n=9+((Math.random()*5)|0);rot=rnd(0,6.28);
+  petals=Array.from({length:n},(_,i)=>({a:i*6.2832/n,state:'on'}));
+  plucked=0;showText=false;loves=false;hint.textContent='tap a petal to pluck';
+}
+reset();
+const CX=60,HY=68,BY=138,PL=17;
+let hx=CX,hy=HY;
+function pluck(e){
+  if(!playing)return;
+  const on=petals.filter(p=>p.state==='on');
+  if(!on.length){if(petals.every(p=>p.state==='landed'))reset();return}
+  let p=on[(Math.random()*on.length)|0];
+  if(e&&e.clientX!==undefined){
+    const r=sc.getBoundingClientRect(),ta=Math.atan2((e.clientY-r.top)/r.height*H-hy,(e.clientX-r.left)/r.width*VW-OX-hx);
+    let best=9;
+    for(const q of on){const df=Math.abs(Math.atan2(Math.sin(q.a+rot-ta),Math.cos(q.a+rot-ta)));if(df<best){best=df;p=q}}
+  }
+  const ang=p.a+rot,d=5+PL/2;
+  Object.assign(p,{state:'fall',x:hx+Math.cos(ang)*d,y:hy+Math.sin(ang)*d,ang,
+    vx:rnd(-8,8),vy:-16,spin:rnd(-3,3),ph:rnd(0,6.28),gy:rnd(136,152)});
+  plucked++;loves=plucked%2===1;showText=true;
+  const left=petals.filter(q=>q.state==='on').length;
+  hint.textContent=left?'petals left: '+left:'tap again for a new flower';
+}
+sc.addEventListener('pointerdown',pluck);
+addEventListener('keydown',e=>{if(playing&&e.code==='Space'){e.preventDefault();pluck()}});
+
+// ---------- setup screen ----------
+document.querySelectorAll('.opts[data-k]').forEach(g=>g.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  const k=g.dataset.k;cfg[k]=b.dataset.v;
+  if(k==='time'){th=THEMES[cfg.time];buildSky(S2)}
+  if(k==='meadow')makeFlowers(S2,Math.round(+cfg.meadow*S2.w/120));
+}));
+document.getElementById('go').onclick=()=>{
+  cfg.name=document.getElementById('nm').value.toUpperCase().replace(/[^A-Z ]/g,'').trim();
+  th=THEMES[cfg.time];PC=PETAL[cfg.petal];
+  reset();
+  document.getElementById('setup').style.display='none';
+  document.getElementById('game').style.display='flex';
+  fit();playing=true;last=performance.now();
+};
+document.getElementById('back').onclick=()=>{
+  playing=false;
+  document.getElementById('game').style.display='none';
+  document.getElementById('setup').style.display='flex';
+};
+let last=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min((now-last)/1000,.05),t=now/1000;last=now;
+  drawScene(sctx,S2,t);
+  if(!playing)return;
+  sctx.save();sctx.translate(OX,0);
+
+  // main daisy
+  const sway=Math.sin(t*1.2)*1.5;hx=CX+sway;hy=HY;
+  for(let y=Math.round(hy);y<=BY;y++){
+    const k=(y-hy)/(BY-hy),x=Math.round(CX+sway*(1-k)*(1-k));
+    px(ctx,x,y,'#2e8a34');px(ctx,x+1,y,'#1e6a28');
+  }
+  blob(59,114,-2.5+sway*.03,13,6,'#2f9a3a','#1f6e2a');
+  blob(61,123,-.55+sway*.03,13,6,'#2f9a3a','#1f6e2a');
+  for(const p of petals)if(p.state==='on')blob(hx+Math.cos(p.a+rot)*5,hy+Math.sin(p.a+rot)*5,p.a+rot,PL,5,PC[0],PC[1]);
+  for(let y=-5;y<=5;y++)for(let x=-5;x<=5;x++){
+    const d=Math.hypot(x,y);if(d>5)continue;
+    px(ctx,Math.round(hx+x),Math.round(hy+y),d>3&&(x+y)%2?'#8a4a14':d<2.5&&x<0&&y<0?'#f0b44a':'#d98524');
+  }
+  for(const p of petals){
+    if(p.state==='fall'){
+      p.vy=Math.min(p.vy+90*dt,50);
+      p.x+=(p.vx+Math.sin(t*3+p.ph)*14)*dt;p.y+=p.vy*dt;p.ang+=p.spin*dt;
+      if(p.y>=p.gy){p.state='landed';p.ang=(Math.random()<.5?0:Math.PI)+rnd(-.25,.25);p.y=p.gy}
     }
-    reset();
-    const CX = 60, HY = 68, BY = 138, PL = 17, CR = 5;
-    let hx = CX, hy = HY;
-    function pluck(e) {
-      const on = petals.filter(p => p.state === 'on');
-      if (!on.length) { if (petals.every(p => p.state === 'landed')) reset(); return }
-      let p = on[(Math.random() * on.length) | 0];
-      if (e && e.clientX !== undefined) {
-        const r = cv.getBoundingClientRect(), ta = Math.atan2((e.clientY - r.top) / r.height * H - hy, (e.clientX - r.left) / r.width * W - hx);
-        let best = 9;
-        for (const q of on) { const df = Math.abs(Math.atan2(Math.sin(q.a + rot - ta), Math.cos(q.a + rot - ta))); if (df < best) { best = df; p = q } }
-      }
-      const ang = p.a + rot, d = 5 + PL / 2;
-      Object.assign(p, {
-        state: 'fall', x: hx + Math.cos(ang) * d, y: hy + Math.sin(ang) * d, ang,
-        vx: rnd(-8, 8), vy: -16, spin: rnd(-3, 3), ph: rnd(0, 6.28), gy: rnd(136, 152)
-      });
-      plucked++; loves = plucked % 2 === 1; showText = true;
+    if(p.state!=='on'){
+      const w=p.state==='landed'?3:5,c=Math.cos(p.ang)*PL/2,s=Math.sin(p.ang)*PL/2;
+      blob(p.x-c,p.y-s,p.ang,PL,w,PC[0],PC[1]);
     }
-    cv.addEventListener('pointerdown', pluck);
-    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); pluck() } });
-
-    // ---------- loop ----------
-    let last = performance.now();
-    function frame(now) {
-      const dt = Math.min((now - last) / 1000, .05), t = now / 1000; last = now;
-      ctx.drawImage(bg, 0, 0);
-
-      for (const s of stars) {
-        const v = Math.sin(t * 2 + s.ph);
-        px(ctx, s.x, s.y, v > .6 ? '#ffffff' : v > -.2 ? '#9fb4ff' : '#4a5fb8');
-        if (s.big && v > .5) for (const [d, e] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(ctx, s.x + d, s.y + e, '#cfdcff');
-      }
-
-      for (const b of blades) {
-        for (let j = 0; j < b.h; j++) {
-          const off = Math.round(Math.sin(t * 1.5 + b.ph + b.x * .2) * j / b.h * 1.3);
-          px(ctx, b.x + off, b.y - j, GC[Math.min(3, b.c + (j > b.h / 2 ? 1 : 0))]);
-        }
-      }
-
-      for (const f of bgf) {
-        const o = Math.round(Math.sin(t * 1.5 + f.ph) * 1.2);
-        for (let j = 0; j < f.h; j++) { const so = Math.round(Math.sin(t * 1.5 + f.ph) * j / f.h * 1.2); px(ctx, f.x + so, f.y - j, j % 3 ? '#2a7a30' : '#1f6b2a') }
-        const fx = f.x + o, fy = f.y - f.h;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(ctx, fx + dx, fy + dy, f.pc);
-        if (f.h > 10) for (const [dx, dy] of [[1, 1], [-1, -1], [1, -1], [-1, 1]]) px(ctx, fx + dx, fy + dy, f.pc);
-        px(ctx, fx, fy, f.cc);
-      }
-      // flower
-      const sway = Math.sin(t * 1.2) * 1.5; hx = CX + sway; hy = HY;
-      for (let y = Math.round(hy); y <= BY; y++) {
-        const k = (y - hy) / (BY - hy), x = Math.round(CX + sway * (1 - k) * (1 - k));
-        px(ctx, x, y, '#2e8a34'); px(ctx, x + 1, y, '#1e6a28');
-      }
-      blob(59, 114, -2.5 + sway * .03, 13, 6, '#2f9a3a', '#1f6e2a');
-      blob(61, 123, -.55 + sway * .03, 13, 6, '#2f9a3a', '#1f6e2a');
-      for (const p of petals) if (p.state === 'on') blob(hx + Math.cos(p.a + rot) * 5, hy + Math.sin(p.a + rot) * 5, p.a + rot, PL, 5, '#d4e4f8', '#9fb8e0');
-      for (let y = -5; y <= 5; y++)for (let x = -5; x <= 5; x++) {
-        const d = Math.hypot(x, y); if (d > 5) continue;
-        px(ctx, Math.round(hx + x), Math.round(hy + y), d > 3 && (x + y) % 2 ? '#8a4a14' : d < 2.5 && x < 0 && y < 0 ? '#f0b44a' : '#d98524');
-      }
-
-      // loose petals
-      for (const p of petals) {
-        if (p.state === 'fall') {
-          p.vy = Math.min(p.vy + 90 * dt, 50);
-          p.x += (p.vx + Math.sin(t * 3 + p.ph) * 14) * dt; p.y += p.vy * dt; p.ang += p.spin * dt;
-          if (p.y >= p.gy) { p.state = 'landed'; p.ang = (Math.random() < .5 ? 0 : Math.PI) + rnd(-.25, .25); p.y = p.gy }
-        }
-        if (p.state !== 'on') {
-          const w = p.state === 'landed' ? 3 : 5, c = Math.cos(p.ang) * PL / 2, s = Math.sin(p.ang) * PL / 2;
-          blob(p.x - c, p.y - s, p.ang, PL, w, '#d4e4f8', '#9fb8e0');
-        }
-      }
-
-      if (showText) text(loves ? 'LOVES ME' : 'LOVES ME NOT', loves ? 28 : 12, 8, loves ? '#ffafc0' : '#a9bcff', '#0c1550');
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  </script>
+  }
+  sctx.restore();
+  if(showText){
+    const col=loves?th.lv:th.nt,z=VW<110?1:2;
+    text(cfg.name||(cfg.who==='she'?'SHE':'HE'),6,z,col,th.sh);
+    text(loves?'LOVES ME':'LOVES ME NOT',6+z*6,z,col,th.sh);
+  }
+}
+requestAnimationFrame(frame);
+</script>
 </body>
-
 </html>
