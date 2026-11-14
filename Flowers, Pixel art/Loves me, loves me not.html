@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Loves me, loves me not</title>
+  <style>
+    :root {
+      --bg: #e9ecf8;
+      --fg: #2a3260;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    @media (prefers-color-scheme:dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #070914;
+        --fg: #9fb0ee
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #070914;
+      --fg: #9fb0ee
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      user-select: none
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      cursor: pointer;
+      border: 2px solid var(--fg);
+      touch-action: manipulation
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c" width="120" height="160"></canvas>
+  <div>tap or press space to pluck a petal</div>
+  <script>
+    const W = 120, H = 160, GY = 126, cv = document.getElementById('c'), ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    function fit() { const s = Math.max(1, Math.floor(Math.min(innerWidth * .92 / W, (innerHeight - 70) / H))); cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px' }
+    addEventListener('resize', fit); fit();
+    const px = (c, x, y, col) => { c.fillStyle = col; c.fillRect(x | 0, y | 0, 1, 1) };
+    const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]].map(r => r.map(v => (v + .5) / 16));
+    const rnd = (a, b) => a + Math.random() * (b - a);
+
+    // ---------- static background (sky, moon, hills, ground) ----------
+    const bg = document.createElement('canvas'); bg.width = W; bg.height = H;
+    (function () {
+      const g = bg.getContext('2d');
+      const bands = ['#070b2e', '#0c1550', '#142277', '#2a3a9e', '#4a4aa8', '#8a5aa0'];
+      for (let y = 0; y < H; y++)for (let x = 0; x < W; x++) {
+        const t = Math.min(y / 104, 1) * 5, i = Math.floor(t), f = t - i;
+        px(g, x, y, f > B[y & 3][x & 3] ? bands[Math.min(i + 1, 5)] : bands[i]);
+      }
+      const mx = 96, my = 30;
+      for (let y = 0; y < 80; y++)for (let x = 0; x < W; x++) {
+        const d = Math.hypot(x - mx, y - my);
+        if (d <= 6) px(g, x, y, d < 3 && (x + y) % 5 === 0 ? '#d6d39a' : '#ece9b8');
+        else if (d < 18 && (1 - (d - 6) / 12) * .55 > B[y & 3][x & 3]) px(g, x, y, '#5a6ec8');
+      }
+      for (let x = 0; x < W; x++) {
+        const h1 = 100 + 5 * Math.sin(x * .045 + 1) + 3 * Math.sin(x * .11);
+        const h2 = 112 + 4 * Math.sin(x * .07 + 3) + 2 * Math.sin(x * .2);
+        for (let y = Math.round(h1); y < H; y++)px(g, x, y, '#1b2a6e');
+        for (let y = Math.round(h2); y < H; y++)px(g, x, y, '#101a52');
+      }
+      for (let y = GY; y < H; y++)for (let x = 0; x < W; x++)px(g, x, y, (x + y) % 2 && B[y & 3][x & 3] > .5 ? '#1d5226' : '#16401f');
+    })();
+
+    // ---------- stars & grass ----------
+    const stars = [];
+    for (let i = 0; i < 34; i++) { const x = rnd(2, W - 2), y = rnd(2, 84); if (Math.hypot(x - 96, y - 30) > 20) stars.push({ x: x | 0, y: y | 0, ph: rnd(0, 6.28), big: Math.random() < .2 }) }
+    const blades = [];
+    for (let i = 0; i < 260; i++)blades.push({ x: rnd(0, W) | 0, y: rnd(GY + 2, H - 1) | 0, h: rnd(3, 9) | 0, ph: rnd(0, 6.28), c: (Math.random() * 4) | 0 });
+    blades.sort((a, b) => a.y - b.y);
+    const GC = ['#15501f', '#1f6b2a', '#2f8a35', '#49a844'];
+    const FC = [['#ffffff', '#f5d04a'], ['#ff9fc0', '#fff3b0'], ['#ffe35a', '#c8741a'], ['#c9a6ff', '#fff3b0'], ['#9fd0ff', '#fff3b0']];
+    const bgf = [];
+    for (let i = 0; i < 80; i++) { const c = FC[(Math.random() * FC.length) | 0]; bgf.push({ x: rnd(2, W - 2) | 0, y: rnd(GY + 3, H - 2) | 0, h: rnd(5, 15) | 0, pc: c[0], cc: c[1], ph: rnd(0, 6.28) }) }
+    bgf.sort((a, b) => a.y - b.y);
+
+    // ---------- 3x5 pixel font ----------
+    const FONT = { L: '100100100100111', O: '111101101101111', V: '101101101101010', E: '111100110100111', S: '111100111001111', M: '101111111101101', N: '111101101101101', T: '111010010010010' };
+    function text(str, x, y, col, sh) {
+      for (const ch of str) {
+        const g = FONT[ch];
+        if (g) for (let i = 0; i < 15; i++)if (g[i] === '1') {
+          const gx = x + (i % 3) * 2, gy = y + ((i / 3) | 0) * 2;
+          ctx.fillStyle = sh; ctx.fillRect(gx + 1, gy + 1, 2, 2);
+        }
+        if (g) for (let i = 0; i < 15; i++)if (g[i] === '1') { ctx.fillStyle = col; ctx.fillRect(x + (i % 3) * 2, y + ((i / 3) | 0) * 2, 2, 2) }
+        x += 8;
+      }
+    }
+
+    // ---------- petal / leaf shape ----------
+    function blob(bx, by, ang, len, wid, c1, c2) {
+      const ca = Math.cos(ang), sa = Math.sin(ang), n = len * 1.6;
+      for (let k = 0; k <= n; k++) {
+        const t = k / n, w = Math.sin(Math.PI * Math.pow(t, .75)) * wid / 2;
+        for (let o = -w; o <= w; o += .5) {
+          px(ctx, Math.round(bx + ca * len * t - sa * o), Math.round(by + sa * len * t + ca * o), o > 0.4 ? c2 : c1);
+        }
+      }
+    }
+
+    // ---------- state ----------
+    let petals, plucked, showText, loves, rot;
+    function reset() {
+      const n = 9 + ((Math.random() * 5) | 0); rot = rnd(0, 6.28);
+      petals = Array.from({ length: n }, (_, i) => ({ a: i * 6.2832 / n, state: 'on' }));
+      plucked = 0; showText = false; loves = false;
+    }
+    reset();
+    const CX = 60, HY = 68, BY = 138, PL = 17, CR = 5;
+    let hx = CX, hy = HY;
+    function pluck(e) {
+      const on = petals.filter(p => p.state === 'on');
+      if (!on.length) { if (petals.every(p => p.state === 'landed')) reset(); return }
+      let p = on[(Math.random() * on.length) | 0];
+      if (e && e.clientX !== undefined) {
+        const r = cv.getBoundingClientRect(), ta = Math.atan2((e.clientY - r.top) / r.height * H - hy, (e.clientX - r.left) / r.width * W - hx);
+        let best = 9;
+        for (const q of on) { const df = Math.abs(Math.atan2(Math.sin(q.a + rot - ta), Math.cos(q.a + rot - ta))); if (df < best) { best = df; p = q } }
+      }
+      const ang = p.a + rot, d = 5 + PL / 2;
+      Object.assign(p, {
+        state: 'fall', x: hx + Math.cos(ang) * d, y: hy + Math.sin(ang) * d, ang,
+        vx: rnd(-8, 8), vy: -16, spin: rnd(-3, 3), ph: rnd(0, 6.28), gy: rnd(136, 152)
+      });
+      plucked++; loves = plucked % 2 === 1; showText = true;
+    }
+    cv.addEventListener('pointerdown', pluck);
+    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); pluck() } });
+
+    // ---------- loop ----------
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min((now - last) / 1000, .05), t = now / 1000; last = now;
+      ctx.drawImage(bg, 0, 0);
+
+      for (const s of stars) {
+        const v = Math.sin(t * 2 + s.ph);
+        px(ctx, s.x, s.y, v > .6 ? '#ffffff' : v > -.2 ? '#9fb4ff' : '#4a5fb8');
+        if (s.big && v > .5) for (const [d, e] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(ctx, s.x + d, s.y + e, '#cfdcff');
+      }
+
+      for (const b of blades) {
+        for (let j = 0; j < b.h; j++) {
+          const off = Math.round(Math.sin(t * 1.5 + b.ph + b.x * .2) * j / b.h * 1.3);
+          px(ctx, b.x + off, b.y - j, GC[Math.min(3, b.c + (j > b.h / 2 ? 1 : 0))]);
+        }
+      }
+
+      for (const f of bgf) {
+        const o = Math.round(Math.sin(t * 1.5 + f.ph) * 1.2);
+        for (let j = 0; j < f.h; j++) { const so = Math.round(Math.sin(t * 1.5 + f.ph) * j / f.h * 1.2); px(ctx, f.x + so, f.y - j, j % 3 ? '#2a7a30' : '#1f6b2a') }
+        const fx = f.x + o, fy = f.y - f.h;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(ctx, fx + dx, fy + dy, f.pc);
+        if (f.h > 10) for (const [dx, dy] of [[1, 1], [-1, -1], [1, -1], [-1, 1]]) px(ctx, fx + dx, fy + dy, f.pc);
+        px(ctx, fx, fy, f.cc);
+      }
+      // flower
+      const sway = Math.sin(t * 1.2) * 1.5; hx = CX + sway; hy = HY;
+      for (let y = Math.round(hy); y <= BY; y++) {
+        const k = (y - hy) / (BY - hy), x = Math.round(CX + sway * (1 - k) * (1 - k));
+        px(ctx, x, y, '#2e8a34'); px(ctx, x + 1, y, '#1e6a28');
+      }
+      blob(59, 114, -2.5 + sway * .03, 13, 6, '#2f9a3a', '#1f6e2a');
+      blob(61, 123, -.55 + sway * .03, 13, 6, '#2f9a3a', '#1f6e2a');
+      for (const p of petals) if (p.state === 'on') blob(hx + Math.cos(p.a + rot) * 5, hy + Math.sin(p.a + rot) * 5, p.a + rot, PL, 5, '#d4e4f8', '#9fb8e0');
+      for (let y = -5; y <= 5; y++)for (let x = -5; x <= 5; x++) {
+        const d = Math.hypot(x, y); if (d > 5) continue;
+        px(ctx, Math.round(hx + x), Math.round(hy + y), d > 3 && (x + y) % 2 ? '#8a4a14' : d < 2.5 && x < 0 && y < 0 ? '#f0b44a' : '#d98524');
+      }
+
+      // loose petals
+      for (const p of petals) {
+        if (p.state === 'fall') {
+          p.vy = Math.min(p.vy + 90 * dt, 50);
+          p.x += (p.vx + Math.sin(t * 3 + p.ph) * 14) * dt; p.y += p.vy * dt; p.ang += p.spin * dt;
+          if (p.y >= p.gy) { p.state = 'landed'; p.ang = (Math.random() < .5 ? 0 : Math.PI) + rnd(-.25, .25); p.y = p.gy }
+        }
+        if (p.state !== 'on') {
+          const w = p.state === 'landed' ? 3 : 5, c = Math.cos(p.ang) * PL / 2, s = Math.sin(p.ang) * PL / 2;
+          blob(p.x - c, p.y - s, p.ang, PL, w, '#d4e4f8', '#9fb8e0');
+        }
+      }
+
+      if (showText) text(loves ? 'LOVES ME' : 'LOVES ME NOT', loves ? 28 : 12, 8, loves ? '#ffafc0' : '#a9bcff', '#0c1550');
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+
+</html>
